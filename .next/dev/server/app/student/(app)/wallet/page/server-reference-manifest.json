@@ -1,0 +1,20 @@
+{
+  "node": {
+    "00e57d4de11e3abc0c8cfe517104343cdfb5060b52": {
+      "workers": {
+        "app/student/(app)/wallet/page": {
+          "moduleId": "[project]/Desktop/00 - Clubfit/.next-internal/server/app/student/(app)/wallet/page/actions.js { ACTIONS_MODULE0 => \"[project]/Desktop/00 - Clubfit/app/student/(app)/wallet/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "generateWalletToken",
+          "filename": "Desktop/00 - Clubfit/app/student/(app)/wallet/actions.ts"
+        }
+      },
+      "layer": {
+        "app/student/(app)/wallet/page": "action-browser"
+      },
+      "exportedName": "generateWalletToken",
+      "filename": "Desktop/00 - Clubfit/app/student/(app)/wallet/actions.ts"
+    }
+  },
+  "edge": {}
+}

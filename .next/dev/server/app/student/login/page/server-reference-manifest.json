@@ -1,0 +1,20 @@
+{
+  "node": {
+    "40448c53ce001ac14e0381464897f62f18f222d153": {
+      "workers": {
+        "app/student/login/page": {
+          "moduleId": "[project]/Desktop/00 - Clubfit/.next-internal/server/app/student/login/page/actions.js { ACTIONS_MODULE0 => \"[project]/Desktop/00 - Clubfit/app/student/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "studentLogin",
+          "filename": "Desktop/00 - Clubfit/app/student/actions.ts"
+        }
+      },
+      "layer": {
+        "app/student/login/page": "action-browser"
+      },
+      "exportedName": "studentLogin",
+      "filename": "Desktop/00 - Clubfit/app/student/actions.ts"
+    }
+  },
+  "edge": {}
+}

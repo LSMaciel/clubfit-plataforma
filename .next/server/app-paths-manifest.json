@@ -1,0 +1,23 @@
+{
+  "/api/health/route": "app/api/health/route.js",
+  "/_not-found/page": "app/_not-found/page.js",
+  "/_global-error/page": "app/_global-error/page.js",
+  "/[slug]/page": "app/[slug]/page.js",
+  "/page": "app/page.js",
+  "/student/login/page": "app/student/login/page.js",
+  "/[slug]/benefits/page": "app/[slug]/benefits/page.js",
+  "/admin/academies/new/page": "app/admin/academies/new/page.js",
+  "/admin/academies/page": "app/admin/academies/page.js",
+  "/admin/benefits/new/page": "app/admin/benefits/new/page.js",
+  "/admin/benefits/page": "app/admin/benefits/page.js",
+  "/admin/dashboard/page": "app/admin/dashboard/page.js",
+  "/admin/login/page": "app/admin/login/page.js",
+  "/admin/partners/new/page": "app/admin/partners/new/page.js",
+  "/admin/partners/page": "app/admin/partners/page.js",
+  "/admin/students/new/page": "app/admin/students/new/page.js",
+  "/admin/students/page": "app/admin/students/page.js",
+  "/admin/validate/page": "app/admin/validate/page.js",
+  "/student/(app)/dashboard/page": "app/student/(app)/dashboard/page.js",
+  "/student/(app)/partners/page": "app/student/(app)/partners/page.js",
+  "/student/(app)/wallet/page": "app/student/(app)/wallet/page.js"
+}
