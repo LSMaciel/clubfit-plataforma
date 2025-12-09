@@ -10,7 +10,7 @@ import { cleanCPF } from '@/utils/formatters'
  * Retorna se é FIRST_ACCESS (não tem usuário Auth), LOGIN (tem usuário) ou NOT_FOUND.
  */
 export async function checkStudentStatus(slug: string, rawCpf: string) {
-  const supabase = createClient()
+  const supabase = await createClient()
   const supabaseAdmin = createAdminClient() // Usamos Admin pois RLS bloqueia leitura de alunos para visitantes
 
   const cpf = cleanCPF(rawCpf)
@@ -57,9 +57,9 @@ export async function checkStudentStatus(slug: string, rawCpf: string) {
  * 3. Loga o usuário.
  */
 export async function handleFirstAccess(slug: string, rawCpf: string, password: string) {
-  const supabase = createClient()
+  const supabase = await createClient()
   const supabaseAdmin = createAdminClient()
-  
+
   const cpf = cleanCPF(rawCpf)
   const dummyEmail = `${cpf}@clubfit.app` // Email fictício para o Auth
 
@@ -104,7 +104,7 @@ export async function handleFirstAccess(slug: string, rawCpf: string, password: 
     console.error('Erro Update Student:', updateError)
     return { error: 'Erro ao vincular cadastro.' }
   }
-  
+
   // 4. Criar perfil em public.users também (Opcional, mas bom para consistência do RLS get_user_data)
   // A tabela students já serve como perfil, mas se seu RLS usa public.users para roles globais, precisamos criar.
   // Pelo nosso Schema v1, public.users é core. Então vamos criar.
@@ -116,10 +116,10 @@ export async function handleFirstAccess(slug: string, rawCpf: string, password: 
       name: 'Aluno ClubFit', // Nome genérico ou pegar do student
       role: 'STUDENT'
     })
-    
-   if (profileError) {
-      console.warn('Erro ao criar public.users para aluno (não crítico se RLS olhar students):', profileError)
-   }
+
+  if (profileError) {
+    console.warn('Erro ao criar public.users para aluno (não crítico se RLS olhar students):', profileError)
+  }
 
   // 5. Fazer Login
   const { error: loginError } = await supabase.auth.signInWithPassword({
@@ -138,7 +138,7 @@ export async function handleFirstAccess(slug: string, rawCpf: string, password: 
  * Realiza o LOGIN recorrente do aluno.
  */
 export async function handleLogin(slug: string, rawCpf: string, password: string) {
-  const supabase = createClient()
+  const supabase = await createClient()
   const cpf = cleanCPF(rawCpf)
   const dummyEmail = `${cpf}@clubfit.app`
 

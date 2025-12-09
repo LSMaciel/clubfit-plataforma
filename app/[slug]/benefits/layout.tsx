@@ -6,23 +6,24 @@ import React from 'react'
 
 interface LayoutProps {
   children: React.ReactNode
-  params: { slug: string }
+  params: Promise<{ slug: string }>
 }
 
 export default async function StudentLayout({ children, params }: LayoutProps) {
-  const supabase = createClient()
+  const resolvedParams = await params
+  const supabase = await createClient()
 
-  // 1. Verificar Sessão
+  // 1. Verificar Semssão
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
-    redirect(`/${params.slug}`)
+    redirect(`/${resolvedParams.slug}`)
   }
 
   // 2. Buscar Dados da Academia (Theme)
   const { data: academy } = await supabase
     .from('academies')
     .select('name, logo_url, primary_color')
-    .eq('slug', params.slug)
+    .eq('slug', resolvedParams.slug)
     .single()
 
   if (!academy) {
@@ -31,21 +32,21 @@ export default async function StudentLayout({ children, params }: LayoutProps) {
 
   return (
     <div className="min-h-screen bg-slate-50 pb-20"> {/* pb-20 para não esconder atrás da nav */}
-      
+
       {/* Header App */}
       <header className="bg-white px-4 py-3 shadow-sm sticky top-0 z-10 flex items-center justify-between">
         <div className="flex items-center gap-2">
-           {academy.logo_url ? (
-               <img src={academy.logo_url} alt={academy.name} className="w-8 h-8 rounded-full object-cover" />
-           ) : (
-               <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white" style={{ backgroundColor: academy.primary_color }}>
-                   {academy.name.substring(0, 2).toUpperCase()}
-               </div>
-           )}
-           <span className="font-bold text-slate-800 text-sm">{academy.name}</span>
+          {academy.logo_url ? (
+            <img src={academy.logo_url} alt={academy.name} className="w-8 h-8 rounded-full object-cover" />
+          ) : (
+            <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white" style={{ backgroundColor: academy.primary_color }}>
+              {academy.name.substring(0, 2).toUpperCase()}
+            </div>
+          )}
+          <span className="font-bold text-slate-800 text-sm">{academy.name}</span>
         </div>
         <div className="text-xs text-slate-400">
-            Olá, Aluno
+          Olá, Aluno
         </div>
       </header>
 
@@ -55,8 +56,8 @@ export default async function StudentLayout({ children, params }: LayoutProps) {
       </main>
 
       {/* Navegação Inferior */}
-      <BottomNav slug={params.slug} primaryColor={academy.primary_color || '#000000'} />
-      
+      <BottomNav slug={resolvedParams.slug} primaryColor={academy.primary_color || '#000000'} />
+
     </div>
   )
 }
