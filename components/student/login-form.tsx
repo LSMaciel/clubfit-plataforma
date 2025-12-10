@@ -5,12 +5,16 @@ import { studentLogin } from '@/app/student/actions'
 import { useRouter } from 'next/navigation'
 
 interface LoginFormProps {
-  slug: string
-  academyName: string
-  primaryColor: string
+  slug?: string
+  academyName?: string
+  primaryColor?: string
 }
 
-export function StudentLoginForm({ slug, academyName, primaryColor }: LoginFormProps) {
+export function StudentLoginForm({
+  slug,
+  academyName = 'ClubFit',
+  primaryColor = '#0f172a' // Default slate-900
+}: LoginFormProps) {
   const [cpf, setCpf] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
