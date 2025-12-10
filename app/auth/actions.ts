@@ -2,6 +2,7 @@
 'use server'
 
 import { createClient } from '@/utils/supabase/server'
+import { createAdminClient } from '@/utils/supabase/admin'
 import { redirect } from 'next/navigation'
 
 export async function signIn(formData: FormData) {
@@ -10,24 +11,29 @@ export async function signIn(formData: FormData) {
   const supabase = await createClient()
 
   // 1. Tentar Login no Supabase Auth
-  const { error } = await supabase.auth.signInWithPassword({
+  const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
   })
 
-  if (error) {
+  if (error || !data.user) {
     return redirect('/admin/login?message=Credenciais inválidas.')
   }
 
-  // 2. Verificar Role na tabela public.users (Regra de Negócio)
-  const { data: userData, error: userError } = await supabase
+  // 2. Verificar Role na tabela public.users (Usando Admin Client para garantir leitura)
+  const supabaseAdmin = createAdminClient()
+  const { data: userData, error: userError } = await supabaseAdmin
     .from('users')
     .select('role')
-    .single() // O RLS garante que ele só busca o próprio user
+    .eq('id', data.user.id)
+    .single()
 
   if (userError || !userData) {
+    console.error('LOGIN ERROR - Profile Lookup Failed:', userError)
+
     await supabase.auth.signOut()
-    return redirect('/admin/login?message=Erro ao verificar cadastro.')
+    const errorMsg = userError ? `Erro BD: ${userError.message} (${userError.code})` : 'Usuário não encontrado na tabela public.users.'
+    return redirect(`/admin/login?message=${encodeURIComponent(errorMsg)}`)
   }
 
   // 3. Bloquear Alunos no painel Admin
