@@ -1,20 +1,33 @@
 import { getPartners } from './actions'
 import { PartnerCard } from '@/components/student/partner-card'
 import Link from 'next/link'
+import { getStudentSession } from '@/utils/auth-student'
+import { createAdminClient } from '@/utils/supabase/admin'
 
 export default async function PartnersListPage() {
+    const session = await getStudentSession()
     const partners = await getPartners()
 
+    // Buscar Slug da Academia para links
+    const supabase = createAdminClient()
+    const { data: academy } = await supabase
+        .from('academies')
+        .select('slug')
+        .eq('id', session?.academyId)
+        .single()
+
+    const academySlug = academy?.slug || 'clubfit' // Fallback safe
+
     return (
-        <div className="min-h-screen bg-slate-50 p-6 pb-24">
+        <div className="min-h-screen bg-[var(--color-background)] p-6 pb-24">
             {/* Header */}
             <div className="mb-6 flex items-center gap-3">
-                <Link href="/student/dashboard" className="text-slate-400 hover:text-slate-600">
+                <Link href="/student/dashboard" className="text-[var(--color-text-secondary)] hover:opacity-80">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
                     </svg>
                 </Link>
-                <h1 className="text-xl font-bold text-slate-800">Parceiros</h1>
+                <h1 className="text-xl font-bold text-[var(--color-text-primary)]">Parceiros</h1>
             </div>
 
             {/* Search (Visual Only for MVP) */}
@@ -38,7 +51,7 @@ export default async function PartnersListPage() {
                     </div>
                 ) : (
                     partners.map(partner => (
-                        <PartnerCard key={partner.id} partner={partner} />
+                        <PartnerCard key={partner.id} partner={partner} academySlug={academySlug} />
                     ))
                 )}
             </div>

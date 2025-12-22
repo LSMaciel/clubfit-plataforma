@@ -1,124 +1,203 @@
-
 'use client'
 
 import React, { useState } from 'react'
 import { generateToken } from '@/app/[slug]/benefits/generate-action'
 import { VoucherModal } from './voucher-modal'
+import { getBenefitBadge, calculateFinalPrice, formatCurrency } from './utils/promotion-visuals'
 
 interface BenefitCardProps {
-  id: string
-  title: string
-  rules?: string
-  partnerName: string
-  partnerAddress?: string
-  validityEnd?: string
-  primaryColor: string
+    id: string
+    title: string
+    rules?: string
+    partnerName: string
+    partnerAddress?: string
+    validityEnd?: string
+    primaryColor: string
+    // New props for Smart Cards
+    type?: string | null
+    cover_image_url?: string | null
+    configuration?: any
+    constraints?: any
+    description?: string
 }
 
-export function BenefitCard({ 
-  id,
-  title, 
-  rules, 
-  partnerName, 
-  partnerAddress, 
-  validityEnd, 
-  primaryColor 
-}: BenefitCardProps) {
-  const [loading, setLoading] = useState(false)
-  const [modalOpen, setModalOpen] = useState(false)
-  const [tokenData, setTokenData] = useState<{ token: string, expiresAt: string } | null>(null)
+import { useBenefitAvailability } from './hooks/use-benefit-availability'
 
-  async function handleGenerate() {
-    setLoading(true)
-    const result = await generateToken(id)
-    setLoading(false)
+import { BenefitDetailsModal } from './benefit-details-modal'
 
-    if (result.error) {
-        alert(result.error)
-        return
+export function BenefitCard(props: BenefitCardProps) {
+    const {
+        id,
+        title,
+        rules,
+        partnerName,
+        validityEnd,
+        primaryColor
+    } = props
+
+    const [loading, setLoading] = useState(false)
+    const [detailsOpen, setDetailsOpen] = useState(false) // New state for details
+    const [modalOpen, setModalOpen] = useState(false) // Voucher modal
+    const [tokenData, setTokenData] = useState<{ token: string, expiresAt: string } | null>(null)
+
+    const badge = getBenefitBadge(props.type || null, props.configuration)
+    const price = calculateFinalPrice(props.type || null, props.configuration)
+
+    // Client Side Validation
+    const { isAvailable, reason } = useBenefitAvailability(validityEnd, props.constraints)
+
+    async function handleGenerate() {
+        if (!isAvailable) return
+
+        setLoading(true)
+        const result = await generateToken(id)
+        setLoading(false)
+
+        if (result.error) {
+            alert(result.error)
+            return
+        }
+
+        if (result.token && result.expiresAt) {
+            setTokenData({ token: result.token, expiresAt: result.expiresAt })
+            setDetailsOpen(false) // Close details
+            setModalOpen(true) // Open voucher
+        }
     }
 
-    if (result.token && result.expiresAt) {
-        setTokenData({ token: result.token, expiresAt: result.expiresAt })
-        setModalOpen(true)
+    // New Handler: Just open the details
+    const handleCardClick = () => {
+        setDetailsOpen(true)
     }
-  }
 
-  return (
-    <>
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col h-full active:scale-[0.99] transition-transform duration-100">
-        
-        {/* Header do Card (Parceiro) */}
-        <div className="p-4 pb-2 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-500">
-                    {partnerName.substring(0, 2).toUpperCase()}
-                </div>
-                <div>
-                    <h4 className="text-sm font-bold text-slate-800 leading-tight">{partnerName}</h4>
-                    {partnerAddress && (
-                        <p className="text-[10px] text-slate-400 truncate max-w-[150px]">{partnerAddress}</p>
-                    )}
-                </div>
-            </div>
-        </div>
-
-        {/* Corpo (Oferta) */}
-        <div className="px-4 py-2 flex-1">
-            <h3 className="text-xl font-extrabold text-slate-900 leading-tight mb-2">
-                {title}
-            </h3>
-            <p className="text-xs text-slate-500 line-clamp-2">
-                {rules || 'Consulte regras no estabelecimento.'}
-            </p>
-        </div>
-
-        {/* Footer (Ação) */}
-        <div className="p-4 pt-2 mt-auto">
-            <div className="flex items-center justify-between mb-3">
-                {validityEnd ? (
-                    <span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded">
-                        Válido até {new Date(validityEnd).toLocaleDateString('pt-BR')}
-                    </span>
-                ) : (
-                    <span className="text-[10px] bg-green-50 text-green-600 px-2 py-0.5 rounded">
-                        Validade Indeterminada
-                    </span>
-                )}
-            </div>
-
-            <button 
-                onClick={handleGenerate}
-                disabled={loading}
-                className="w-full py-3 rounded-xl font-bold text-white shadow-md text-sm flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
-                style={{ backgroundColor: primaryColor }}
+    return (
+        <>
+            <div
+                onClick={handleCardClick}
+                className={`
+                    bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden flex flex-col h-full 
+                    active:scale-[0.99] transition-all duration-200 hover:shadow-xl relative group cursor-pointer
+                    ${!isAvailable ? 'grayscale opacity-75' : ''}
+                `}
             >
-                {loading ? (
-                    <span className="animate-pulse">Gerando...</span>
-                ) : (
-                    <>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <rect width="18" height="18" x="3" y="3" rx="2"/>
-                            <path d="M7 7h.01"/><path d="M17 7h.01"/><path d="M7 17h.01"/><path d="M17 17h.01"/>
-                        </svg>
-                        Gerar Voucher
-                    </>
-                )}
-            </button>
-        </div>
-        </div>
 
-        {/* Modal */}
-        {modalOpen && tokenData && (
-            <VoucherModal 
-                isOpen={modalOpen}
-                onClose={() => setModalOpen(false)}
-                token={tokenData.token}
-                expiresAt={tokenData.expiresAt}
-                title={title}
-                primaryColor={primaryColor}
+                {/* Cover Image & Badge */}
+                <div className="relative h-36 bg-slate-200 overflow-hidden">
+                    {props.cover_image_url ? (
+                        <img
+                            src={props.cover_image_url}
+                            alt={title}
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
+                    ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 bg-slate-50">
+                            <span className="text-xs font-medium opacity-60">Sem Imagem</span>
+                        </div>
+                    )}
+
+                    {/* Dynamic Badge */}
+                    <div className={`
+                absolute top-3 left-3 text-white text-[10px] font-bold px-2.5 py-1 rounded-lg shadow-sm 
+                uppercase tracking-wide flex items-center gap-1.5 backdrop-blur-sm
+                ${isAvailable ? `bg-${badge.color}-600/90` : 'bg-slate-500/90'}
+            `}>
+                        <badge.icon size={12} strokeWidth={3} />
+                        {badge.label}
+                    </div>
+                </div>
+
+                {/* Corpo (Oferta) */}
+                <div className="p-4 flex-1 flex flex-col">
+                    <div className="flex justify-between items-start mb-2">
+                        <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-500 border border-slate-200">
+                                {partnerName.substring(0, 2).toUpperCase()}
+                            </div>
+                        </div>
+
+                        {/* Price Display */}
+                        {price && (
+                            <div className="text-right">
+                                <span className="block text-[10px] text-slate-400 line-through Decoration-slate-300">
+                                    {formatCurrency(price.original)}
+                                </span>
+                                <span className="block text-sm font-extrabold text-green-600">
+                                    {formatCurrency(price.final)}
+                                </span>
+                            </div>
+                        )}
+                    </div>
+
+                    <h3 className="text-base font-bold text-slate-900 leading-tight mb-2 line-clamp-2">
+                        {title}
+                    </h3>
+
+                    <p className="text-xs text-slate-500 line-clamp-2 mb-4">
+                        {rules || 'Consulte regras no estabelecimento.'}
+                    </p>
+
+                    {/* Address & Validity */}
+                    <div className="mt-auto space-y-2 border-t border-slate-50 pt-3">
+                        <div className="flex items-center gap-1.5 text-[10px] text-slate-400">
+                            <span className="font-semibold text-slate-600 truncate max-w-[150px]">{partnerName}</span>
+                            {props.partnerAddress && (
+                                <>
+                                    <span>•</span>
+                                    <span className="truncate max-w-[120px]">{props.partnerAddress}</span>
+                                </>
+                            )}
+                        </div>
+
+                        {validityEnd && (
+                            <div className="inline-flex items-center px-2 py-0.5 rounded bg-slate-50 text-[10px] text-slate-500 font-medium">
+                                ⏰ Válido até {new Date(validityEnd).toLocaleDateString('pt-BR')}
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Footer (Ação) */}
+                <div className="px-4 pb-4">
+                    <button
+                        // onClick={handleGenerate} removed to let card click handle it
+                        type="button"
+                        disabled={loading || !isAvailable}
+                        className={`
+                    w-full py-3 rounded-xl font-bold text-white shadow-md text-sm 
+                    flex items-center justify-center gap-2 
+                    disabled:opacity-70 disabled:cursor-not-allowed 
+                    transition-all hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0
+                    ${!isAvailable ? '!bg-slate-400 !cursor-not-allowed !transform-none' : ''}
+                `}
+                        style={{ backgroundColor: isAvailable ? (primaryColor || '#4F46E5') : '' }}
+                    >
+                        {isAvailable ? 'Ver Detalhes' : (reason || 'Indisponível')}
+                    </button>
+                </div>
+            </div>
+
+            {/* Details Modal */}
+            <BenefitDetailsModal
+                isOpen={detailsOpen}
+                onClose={() => setDetailsOpen(false)}
+                onGenerate={handleGenerate}
+                loading={loading}
+                isAvailable={isAvailable}
+                reason={reason}
+                {...props}
             />
-        )}
-    </>
-  )
+
+            {/* Voucher Modal */}
+            {modalOpen && tokenData && (
+                <VoucherModal
+                    isOpen={modalOpen}
+                    onClose={() => setModalOpen(false)}
+                    token={tokenData.token}
+                    expiresAt={tokenData.expiresAt}
+                    title={title}
+                    primaryColor={primaryColor}
+                />
+            )}
+        </>
+    )
 }

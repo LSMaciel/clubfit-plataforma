@@ -1,72 +1,83 @@
 import { getStudentSession } from '@/utils/auth-student'
 import { createAdminClient } from '@/utils/supabase/admin'
+import { getMarketplaceData } from '@/app/student/actions'
+import { CategoryCarousel } from '@/components/student/category-carousel'
+import { PartnerCard } from '@/components/student/partner-card'
 import Link from 'next/link'
 
-export default async function StudentDashboardPage() {
+export default async function StudentHomePage() {
+    // 1. Auth & Data Fetching
     const session = await getStudentSession()
-    if (!session) return null // Layout handles redirect
+    if (!session) return null
 
+    // Get basic student info for "Welcome"
     const supabaseAdmin = createAdminClient()
     const { data: student } = await supabaseAdmin
         .from('students')
-        .select('full_name')
+        .select('full_name, academy_id, academies(slug)')
         .eq('id', session.studentId)
         .single()
 
     const firstName = student?.full_name.split(' ')[0] || 'Aluno'
+    const academySlug = Array.isArray(student?.academies)
+        ? student?.academies[0]?.slug
+        : (student?.academies as any)?.slug || 'clubfit'
+
+    // Get Marketplace Data (Categories + Partners)
+    const { categories, partners } = await getMarketplaceData(session.academyId)
 
     return (
-        <div className="p-6 space-y-8">
-            {/* Welcome Card */}
-            <section>
-                <h1 className="text-2xl font-light text-slate-800">
-                    Olá, <span className="font-bold">{firstName}</span>.
-                </h1>
-                <p className="text-slate-500 text-sm mt-1">
-                    Bem-vindo de volta!
-                </p>
-            </section>
-
-            {/* Quick Action: Digital Wallet */}
-            <section>
-                <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col items-center text-center space-y-4">
-                    <div className="h-16 w-16 rounded-full bg-[var(--primary-color)]/10 flex items-center justify-center text-[var(--primary-color)]">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0 1 3.75 9.375v-4.5ZM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 0 1-1.125-1.125v-4.5ZM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0 1 13.5 9.375v-4.5Z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 6.75h.75v.75h-.75v-.75ZM6.75 16.5h.75v.75h-.75v-.75ZM16.5 6.75h.75v.75h-.75v-.75ZM13.5 13.5h.75v.75h-.75v-.75ZM13.5 19.5h.75v.75h-.75v-.75ZM19.5 13.5h.75v.75h-.75v-.75ZM19.5 19.5h.75v.75h-.75v-.75ZM16.5 16.5h.75v.75h-.75v-.75Z" />
-                        </svg>
-                    </div>
-                    <div>
-                        <h3 className="font-bold text-slate-900 text-lg">Carteira Digital</h3>
-                        <p className="text-sm text-slate-500 max-w-[200px] mx-auto">
-                            Gere seu QR Code para utilizar descontos nos parceiros.
-                        </p>
-                    </div>
-                    <Link
-                        href="/student/wallet"
-                        className="w-full py-3 px-6 rounded-xl font-bold bg-[var(--primary-color)] text-white shadow-md shadow-[var(--primary-color)]/20 active:scale-95 transition-transform inline-block"
-                    >
-                        Abrir Meu Cartão
-                    </Link>
+        <div className="px-6 py-6 space-y-8">
+            {/* 1. Welcome Header */}
+            <section className="flex justify-between items-end">
+                <div>
+                    <h1 className="text-xl font-light text-slate-800">
+                        Olá, <span className="font-bold">{firstName}</span> 👋
+                    </h1>
+                    <p className="text-slate-500 text-sm mt-0.5">
+                        O que vamos curtir hoje?
+                    </p>
                 </div>
+                {/* Search Trigger (Visual Only for now) */}
+                <Link href="/student/search" className="bg-white p-2.5 rounded-full border border-slate-100 shadow-sm text-slate-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+                    </svg>
+                </Link>
             </section>
 
-            {/* Partner Teaser */}
+            {/* 2. Categories Carousel */}
+            <section>
+                <div className="flex justify-between items-center mb-3">
+                    <h2 className="font-bold text-slate-800 text-lg">Categorias</h2>
+                </div>
+                <CategoryCarousel categories={categories} />
+            </section>
+
+            {/* 3. Partner Feed (Destaques) */}
             <section>
                 <div className="flex justify-between items-center mb-4">
-                    <h2 className="font-bold text-slate-800">Parceiros em Destaque</h2>
-                    <Link href="/student/partners" className="text-xs font-medium text-[var(--primary-color)] hover:underline">
+                    <h2 className="font-bold text-slate-800 text-lg">Destaques</h2>
+                    <Link href="/student/search" className="text-xs font-medium text-[var(--primary-color)] hover:underline">
                         Ver todos
                     </Link>
                 </div>
-                {/* MVP: Teaser estático que leva para a lista */}
-                <Link href="/student/partners" className="block bg-white p-4 rounded-xl border border-slate-100 text-center hover:bg-slate-50 transition-colors group">
-                    <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-slate-100 mb-2 group-hover:scale-110 transition-transform">
-                        <span className="text-2xl">🛍️</span>
+
+                {partners.length > 0 ? (
+                    <div className="grid grid-cols-1 gap-4">
+                        {partners.map(partner => (
+                            <PartnerCard
+                                key={partner.id}
+                                partner={partner}
+                                academySlug={academySlug}
+                            />
+                        ))}
                     </div>
-                    <p className="text-sm font-medium text-slate-600">Explorar Clube de Vantagens</p>
-                    <p className="text-xs text-slate-400 mt-1">Clique para ver as ofertas</p>
-                </Link>
+                ) : (
+                    <div className="text-center py-10 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                        <p className="text-slate-400 text-sm">Nenhum parceiro encontrado nesta academia.</p>
+                    </div>
+                )}
             </section>
         </div>
     )

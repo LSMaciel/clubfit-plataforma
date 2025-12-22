@@ -8,16 +8,19 @@
 ## 1. Visão Geral
 O banco de dados utiliza PostgreSQL hospedado no Supabase. A arquitetura é **Multi-tenant**, onde todas as academias compartilham as mesmas tabelas, mas os dados são segregados logicamente através da coluna `academy_id` e reforçados por políticas de segurança (RLS - *Row Level Security*).
 
+Exceção a partir do PROJ-006: A tabela `partners` é GLOBAL, e o vínculo com `academies` é feito via tabela associativa `academy_partners`.
+
 ## 2. Diagrama de Relacionamento (ER Simplificado)
 
 ```mermaid
 erDiagram
     academies ||--o{ users : "possui admins"
-    academies ||--o{ partners : "tem parceiros"
+    academies ||--o{ academy_partners : "vincula"
     academies ||--o{ students : "tem alunos"
     
     users }|--|| auth_users : "extende"
     
+    partners ||--o{ academy_partners : "vinculado a"
     partners ||--o{ benefits : "oferece"
     partners }|--|| users : "gerido por"
     
@@ -38,7 +41,11 @@ erDiagram
 A entidade raiz do sistema. Cada registro representa um cliente contratante (SaaS).
 *   **PK:** `id` (uuid)
 *   **Campos Chave:** `slug` (usado na URL), `primary_color` (white-label).
+*   **Theming (PROJ-009):** `color_primary`, `color_secondary`, `color_background`, `color_surface`, `color_text_primary`, `color_text_secondary` (Todos Nullable).
 *   **Endereço:** `zip_code`, `street`, `number`, `neighborhood`, `city`, `state`, `latitude`, `longitude`.
+*   **Ciclo de Vida (PROJ-013):** `status` (ENUM: ACTIVE, INACTIVE, SUSPENDED, MAINTENANCE) - Por padrão 'ACTIVE'.
+*   **Financeiro (PROJ-013):** `due_day` (Dia Vencimento 1-31), `last_payment_date` (Data Pagamento).
+
 
 #### `public.users`
 Tabela de perfis que estende a tabela nativa `auth.users` do Supabase.
@@ -47,11 +54,24 @@ Tabela de perfis que estende a tabela nativa `auth.users` do Supabase.
 
 ### 3.2. Entidades de Negócio
 
-#### `public.partners`
-Estabelecimentos comerciais.
-*   **FK:** `academy_id` (Dono do relacionamento).
+#### `public.partners` (Refatorado PROJ-006)
+Estabelecimentos comerciais (Global). NÃO possui mais `academy_id`.
+*   **PK:** `id` (uuid).
+*   **Campos Chave:** `cnpj` (UNIQUE), `name`.
 *   **FK:** `owner_id` (Usuário que loga para gerir este parceiro).
 *   **Endereço:** `zip_code`, `street`, `number`, `neighborhood`, `city`, `state`, `latitude`, `longitude`.
+*   **Perfil Rico (PROJ-010):**
+    *   `whatsapp`, `instagram`, `website`, `phone` (Contatos).
+    *   `opening_hours` (JSONB - Horários).
+    *   `amenities` (Array Text - Comodidades).
+    *   `gallery_urls` (Array Text - Fotos).
+
+#### `public.academy_partners` (Novo - PROJ-006)
+Tabela associativa que vincula Academias a Parceiros (N:N).
+*   **PK:** `id`.
+*   **FK:** `academy_id` (Academia que tem o vínculo).
+*   **FK:** `partner_id` (O parceiro vinculado).
+*   **Campos Chave:** `status` (ACTIVE/INACTIVE).
 
 #### `public.students`
 O aluno da academia.
@@ -62,6 +82,10 @@ O aluno da academia.
 As promoções criadas pelos parceiros.
 *   **FK:** `partner_id`.
 *   **Campos Chave:** `rules` (Texto livre com regras), `status` (ACTIVE/INACTIVE).
+*   **Promoções Avançadas (PROJ-012):**
+    *   `type` (TEXT): Tipo da promoção (STANDARD, BOGO, etc).
+    *   `configuration` (JSONB): Detalhes do benefício (valor, qtd).
+    *   `constraints` (JSONB): Regras de validação (horário, canal).
 
 ### 3.3. Transacional
 
@@ -76,12 +100,9 @@ Histórico permanente de "Quem usou o quê e onde".
 
 ---
 
-## 4. Segurança e RLS (Planejamento)
-*A implementação das policies ocorrerá na STORY-002.*
+## 4. Segurança e RLS (Atualizado PROJ-006)
 
-O princípio base será:
-> "O usuário só pode ver linhas onde `academy_id` coincide com o seu próprio `academy_id` (encontrado em `public.users`)."
-
-Exceções:
-*   **Super Admin:** Vê tudo (Bypass RLS ou policies permissivas).
-*   **Login Aluno:** Aluno vê apenas seus próprios dados e os benefícios da sua academia.
+*   **Partners:** Visível se existir registro em `academy_partners` vinculado ao `academy_id` do usuário.
+*   **Academy Partners:** Visível apenas para a academia dona do vínculo.
+*   **Benefits:** Visível para a Academia/Aluno APENAS SE o vínculo entre a academia e o parceiro estiver `ACTIVE` na tabela `academy_partners`.
+*   **Benefit Usages:** Histórico visível para a academia independentemente do status atual do parceiro (Auditoria).

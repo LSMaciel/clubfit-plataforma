@@ -1,67 +1,82 @@
 'use server'
 
 import { createClient } from '@/utils/supabase/server'
-import { redirect } from 'next/navigation'
+import { PromotionDraft } from '@/components/admin/promotions/types'
+import { baseFormSchema } from '@/components/admin/promotions/schemas'
 import { revalidatePath } from 'next/cache'
+import { redirect } from 'next/navigation'
 
-export async function createBenefit(prevState: any, formData: FormData) {
+export async function createBenefit(draft: PromotionDraft) {
   const supabase = await createClient()
 
-  // 1. Identificar Usuário Logado
+  // 1. Auth and Permission Check
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { error: 'Não autenticado.' }
+  if (!user) {
+    return { error: 'Usuário não autenticado' }
+  }
 
-  // 2. Buscar Perfil e Vínculo com Parceiro
-  // Precisamos saber se ele é um DONO de parceiro (owner_id)
-  const { data: partnerData, error: partnerError } = await supabase
+  // 2. Resolve User & Partner Context
+  // Query User for Academy ID (Global Partners MVP assumes User is tied to Academy context)
+  const { data: userData, error: userError } = await supabase
+    .from('users')
+    .select('academy_id')
+    .eq('id', user.id)
+    .single()
+
+  if (userError || !userData?.academy_id) {
+    console.error('User Academy ID not found:', user.id)
+    return { error: 'Seu usuário não está vinculado a nenhuma academia.' }
+  }
+
+  // Query Partner owned by User (partners table is Global, no academy_id)
+  const { data: partner, error: partnerError } = await supabase
     .from('partners')
-    .select('id, academy_id')
+    .select('id')
     .eq('owner_id', user.id)
     .single()
 
-  // Se não achar parceiro vinculado ao usuário, verificar se é Admin da Academia (opcional, mas focado no parceiro agora)
-  if (partnerError || !partnerData) {
-    return { error: 'Você não tem um estabelecimento comercial vinculado ao seu perfil.' }
+  if (partnerError || !partner) {
+    console.error('Partner not found for user:', user.id)
+    return { error: 'Perfil de parceiro não encontrado para este usuário.' }
   }
 
-  // 3. Coletar Dados
-  const title = formData.get('title') as string
-  const rules = formData.get('rules') as string
-  const validityEnd = formData.get('validity_end') as string
+  // 3. Validation (Re-run Zod on Server)
+  // Ideally we would validate the specific strategy schema too, but base is a good start for the wrapper.
+  const validation = baseFormSchema.safeParse({
+    title: draft.title,
+    description: draft.description,
+    min_spend: draft.constraints?.min_spend,
+    channel: draft.constraints?.channel
+  })
 
-  if (!title) {
-    return { error: 'O título da promoção é obrigatório.' }
+  if (!validation.success) {
+    return { error: 'Dados inválidos: ' + validation.error.errors[0].message }
   }
 
-  // 4. Inserir Benefício
+  // 4. Insert to Database
   const { error: insertError } = await supabase
     .from('benefits')
     .insert({
-      academy_id: partnerData.academy_id,
-      partner_id: partnerData.id,
-      title,
-      rules,
-      validity_end: validityEnd || null, // Se vazio, null (sem validade/eterno)
+      partner_id: partner.id,
+      academy_id: userData.academy_id, // Use User's Academy Context
+      title: draft.title,
+      description: draft.description,
+      type: draft.type,
+      cover_image_url: draft.cover_image_url,
+      configuration: draft.configuration,
+      constraints: draft.constraints,
+      rules: `Regras geradas automaticamente: Tipo ${draft.type}`, // Simple fallback for text rules column
       status: 'ACTIVE'
     })
 
   if (insertError) {
-    console.error('Erro Benefit:', insertError)
-    return { error: 'Erro ao criar promoção.' }
+    console.error('Insert Benefit Error:', insertError)
+    return { error: 'Erro ao salvar no banco de dados. Tente novamente.' }
   }
 
+  // 5. Revalidate and Redirect
   revalidatePath('/admin/benefits')
+  // We return success here and let the client redirect, or redirect directly.
+  // Redirect inside server action acts as throw, preventing further execution.
   redirect('/admin/benefits')
-}
-
-export async function toggleBenefitStatus(benefitId: string, currentStatus: string) {
-  const supabase = await createClient()
-  const newStatus = currentStatus === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE'
-
-  await supabase
-    .from('benefits')
-    .update({ status: newStatus })
-    .eq('id', benefitId)
-
-  revalidatePath('/admin/benefits')
 }

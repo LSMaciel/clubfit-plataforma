@@ -9,7 +9,7 @@ Este documento centraliza as regras de negócio perenes do sistema. Regras espec
 ## 2. Regras de Segurança
 
 *   **R01 - Isolamento Multi-tenant:** Nenhum usuário de uma academia pode acessar dados de outra academia sob nenhuma circunstância (Garantido via RLS).
-*   **R02 - Unicidade de CPF:** Um CPF só pode ter um único cadastro no ecossistema global do ClubFit.
+*   **R02 - Unicidade de CPF:** Um CPF deve ser único dentro de cada academia (Escopo: Academy), permitindo que o mesmo aluno tenha cadastros independentes em academias diferentes.
 
 ## 3. Regras de Benefícios
 

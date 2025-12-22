@@ -1,14 +1,19 @@
-import { createClient } from '@/utils/supabase/server'
+import { createAdminClient } from '@/utils/supabase/admin'
 import { BenefitCard } from '@/components/student/benefit-card'
 import React from 'react'
+import Link from 'next/link'
 
 interface PageProps {
   params: Promise<{ slug: string }>
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }
 
-export default async function BenefitsPage({ params }: PageProps) {
+export default async function BenefitsPage({ params, searchParams }: PageProps) {
   const resolvedParams = await params
-  const supabase = await createClient()
+  const resolvedSearchParams = await searchParams
+  const partnerId = typeof resolvedSearchParams.partner_id === 'string' ? resolvedSearchParams.partner_id : undefined
+
+  const supabase = createAdminClient()
 
   // 1. Resolver ID da Academia
   const { data: academy } = await supabase
@@ -19,7 +24,64 @@ export default async function BenefitsPage({ params }: PageProps) {
 
   if (!academy) return <div>Academia não encontrada</div>
 
+  // 1.1 (Opcional) Buscar nome do parceiro se estiver filtrando
+  let filterTitle = 'Benefícios'
+  let filterSubtitle = 'Explore as ofertas exclusivas para você.'
+
+  if (partnerId) {
+    const { data: partner } = await supabase.from('partners').select('name').eq('id', partnerId).single()
+    if (partner) {
+      filterTitle = partner.name
+      filterSubtitle = 'Ofertas exclusivas deste parceiro.'
+    }
+  }
+
   // 2. Buscar Benefícios Ativos + Parceiro
+  // FIX: Benefits don't have academy_id directly. We must ensure the partner is linked.
+
+  let validPartnerIds: string[] = []
+
+  if (partnerId) {
+    // 2a. Single Partner Mode: Verify Link
+    const { data: link } = await supabase
+      .from('academy_partners')
+      .select('partner_id')
+      .eq('academy_id', academy.id)
+      .eq('partner_id', partnerId)
+      .eq('status', 'ACTIVE')
+      .single()
+
+    if (link) validPartnerIds = [partnerId]
+  } else {
+    // 2b. All Partners Mode: Get all linked
+    const { data: links } = await supabase
+      .from('academy_partners')
+      .select('partner_id')
+      .eq('academy_id', academy.id)
+      .eq('status', 'ACTIVE')
+
+    if (links) validPartnerIds = links.map(l => l.partner_id)
+  }
+
+  // If no valid partners (either not linked or none exist), return empty
+  if (validPartnerIds.length === 0) {
+    return (
+      <div className="space-y-6">
+        {/* Reset Header */}
+        <Link
+          href="/student/partners"
+          className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-800 transition-colors"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
+          </svg>
+          Voltar para Parceiros
+        </Link>
+        <div className="text-center py-12">Nenhuma oferta disponível no momento.</div>
+      </div>
+    )
+  }
+
   const { data: benefits } = await supabase
     .from('benefits')
     .select(`
@@ -29,16 +91,31 @@ export default async function BenefitsPage({ params }: PageProps) {
             address
         )
     `)
-    .eq('academy_id', academy.id)
+    .in('partner_id', validPartnerIds)
     .eq('status', 'ACTIVE')
     .order('created_at', { ascending: false })
+
+  // ... existing imports
+
+  // ... inside component
 
   return (
     <div className="space-y-6">
 
+      {/* Botão Voltar */}
+      <Link
+        href="/student/partners"
+        className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-800 transition-colors"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
+        </svg>
+        Voltar para Parceiros
+      </Link>
+
       <div className="space-y-1">
-        <h1 className="text-2xl font-extrabold text-slate-900">Benefícios</h1>
-        <p className="text-sm text-slate-500">Explore as ofertas exclusivas para você.</p>
+        <h1 className="text-2xl font-extrabold text-slate-900">{filterTitle}</h1>
+        <p className="text-sm text-slate-500">{filterSubtitle}</p>
       </div>
 
       <div className="grid grid-cols-1 gap-4">
@@ -52,6 +129,12 @@ export default async function BenefitsPage({ params }: PageProps) {
               partnerAddress={benefit.partners?.address}
               validityEnd={benefit.validity_end}
               primaryColor={academy.primary_color || '#000000'}
+              // Smart Card Props
+              type={benefit.type}
+              cover_image_url={benefit.cover_image_url}
+              configuration={benefit.configuration}
+              constraints={benefit.constraints}
+              description={benefit.description}
             />
           </React.Fragment>
         ))}

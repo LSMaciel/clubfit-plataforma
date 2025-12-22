@@ -2,6 +2,8 @@
 import { createClient } from '@/utils/supabase/server'
 import { signOut } from '@/app/auth/actions'
 import Link from 'next/link'
+import { FinancialAlertsWidget } from '@/components/admin/super/financial-alerts-widget'
+import { ChurnAlertWidget } from '@/components/admin/super/churn-alert-widget'
 
 export default async function DashboardPage() {
     const supabase = await createClient()
@@ -30,20 +32,26 @@ export default async function DashboardPage() {
             </div>
 
             {isSuperAdmin && (
-                <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-200 mb-6">
-                    <h2 className="text-lg font-bold mb-4 text-indigo-900">Gestão Global (Super Admin)</h2>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                        <Link
-                            href="/admin/academies"
-                            className="flex flex-col items-center justify-center p-6 border border-slate-200 rounded-lg hover:bg-slate-50 hover:border-slate-300 transition-all group"
-                        >
-                            <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mb-3 group-hover:bg-indigo-50 group-hover:text-indigo-600">
-                                🏢
-                            </div>
-                            <span className="font-medium text-slate-700 group-hover:text-indigo-700">Academias</span>
-                        </Link>
+                <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <FinancialAlertsWidget />
+                        <ChurnAlertWidget />
                     </div>
-                </div>
+                    <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-200 mb-6">
+                        <h2 className="text-lg font-bold mb-4 text-indigo-900">Gestão Global (Super Admin)</h2>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                            <Link
+                                href="/admin/super/academies"
+                                className="flex flex-col items-center justify-center p-6 border border-slate-200 rounded-lg hover:bg-slate-50 hover:border-slate-300 transition-all group"
+                            >
+                                <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mb-3 group-hover:bg-indigo-50 group-hover:text-indigo-600">
+                                    🏢
+                                </div>
+                                <span className="font-medium text-slate-700 group-hover:text-indigo-700">Academias</span>
+                            </Link>
+                        </div>
+                    </div>
+                </>
             )}
 
             {(isAcademyAdmin || isSuperAdmin) && (
@@ -68,6 +76,16 @@ export default async function DashboardPage() {
                                 👥
                             </div>
                             <span className="font-medium text-slate-700 group-hover:text-emerald-700">Alunos</span>
+                        </Link>
+
+                        <Link
+                            href="/admin/settings"
+                            className="flex flex-col items-center justify-center p-6 border border-slate-200 rounded-lg hover:bg-slate-50 hover:border-slate-300 transition-all group"
+                        >
+                            <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mb-3 group-hover:bg-purple-50 group-hover:text-purple-600">
+                                🎨
+                            </div>
+                            <span className="font-medium text-slate-700 group-hover:text-purple-700">Personalizar App</span>
                         </Link>
                     </div>
                 </div>

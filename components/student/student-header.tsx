@@ -14,7 +14,7 @@ export function StudentHeader({ logoUrl, academyName, primaryColor }: StudentHea
     const [isMenuOpen, setIsMenuOpen] = useState(false)
 
     return (
-        <header className="bg-white shadow-sm sticky top-0 z-10 px-6 py-4 flex items-center justify-between relative">
+        <header className="bg-white shadow-sm sticky top-0 z-50 px-6 py-4 flex items-center justify-between relative">
             <div className="flex items-center gap-3">
                 {logoUrl ? (
                     <div className="relative h-10 w-10 overflow-hidden rounded-full border border-slate-100">
