@@ -1,7 +1,7 @@
 'use server'
 
 import { createAdminClient } from '@/utils/supabase/admin'
-import { createStudentSession } from '@/utils/auth-student'
+import { createStudentSession, getStudentSession } from '@/utils/auth-student'
 import { redirect } from 'next/navigation'
 
 export async function studentLogin(formData: FormData) {
@@ -217,4 +217,45 @@ export async function getPartnerProfile(academySlug: string, partnerId: string) 
     }
 
     return data
+}
+
+// PROJ-014: BI Functions
+export async function getStudentEconomyStats() {
+    const session = await getStudentSession()
+    if (!session) return null
+    const supabase = createAdminClient()
+
+    // Call RPC
+    const { data, error } = await supabase.rpc('get_student_economy_summary', {
+        p_student_id: session.studentId
+    })
+
+    if (error) {
+        console.error('getStudentEconomyStats Error:', error)
+        throw error
+    }
+
+    // RPC returns array of 1 item
+    return data && data.length > 0 ? data[0] : { total_economy: 0, vouchers_count: 0 }
+}
+
+export async function getStudentHistory(page: number = 0) {
+    const session = await getStudentSession()
+    if (!session) return []
+    const supabase = createAdminClient()
+    const LIMIT = 20
+    const OFFSET = page * LIMIT
+
+    const { data, error } = await supabase.rpc('get_student_voucher_history', {
+        p_student_id: session.studentId,
+        p_limit: LIMIT,
+        p_offset: OFFSET
+    })
+
+    if (error) {
+        console.error('getStudentHistory Error:', error)
+        return []
+    }
+
+    return data || []
 }

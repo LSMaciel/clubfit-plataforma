@@ -92,11 +92,30 @@ As promoções criadas pelos parceiros.
 #### `public.student_access_tokens`
 Tabela volátil para os QR Codes.
 *   **Campos Chave:** `token` (O código em si), `expires_at` (TTL), `status` (PENDING/VALIDATED/EXPIRED).
+*   **Analytics:** `estimated_economy` (DECIMAL) - Valor calculado automaticamente via Trigger.
 *   *Nota:* Registros aqui são temporários, mas mantidos para auditoria.
 
 #### `public.benefit_usages`
 Histórico permanente de "Quem usou o quê e onde".
 *   **Campos Chave:** `validated_at`, `validated_by`.
+
+### 3.4. Analytics (PROJ-014)
+
+#### `public.analytics_daily_academy_metrics`
+Estatísticas diárias pré-calculadas para dashboards rápidos.
+*   **PK:** `date`, `academy_id`.
+*   **Campos:** `vouchers_generated`, `active_students`, `estimated_economy`.
+
+#### `public.analytics_partner_performance`
+Estatísticas mensais de engajamento por parceiro.
+*   **PK:** `month` (Primeiro dia), `partner_id`, `academy_id`.
+*   **Campos:** `vouchers_generated`, `views` (futuro).
+
+### 3.5. Funções RPC
+*   `get_student_economy_summary(p_student_id UUID)`: Retorna total economizado e qtd vouchers.
+*   `get_student_voucher_history(p_student_id UUID, limit, offset)`: Retorna lista de vouchers com nome/logo do parceiro.
+*   `get_academy_dashboard_metrics(p_academy_id UUID)`: Retorna KPIs (Economia, Vouchers) do mês atual e comparação com anterior.
+*   `get_academy_partners_ranking(p_academy_id UUID, start_date, end_date)`: Top 10 parceiros por volume e economia.
 
 ---
 
