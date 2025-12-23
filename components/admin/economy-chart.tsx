@@ -25,8 +25,8 @@ export function EconomyChart({ data }: EconomyChartProps) {
         return `R$ ${value}`
     }
 
-    const formatTooltip = (value: number) => [
-        new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value),
+    const formatTooltip = (value: any) => [
+        new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(value)),
         'Economia'
     ]
 

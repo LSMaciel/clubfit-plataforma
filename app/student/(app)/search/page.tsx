@@ -8,15 +8,16 @@ import { SearchInput } from '@/components/student/search-input' // Will create t
 export default async function SearchPage({
     searchParams,
 }: {
-    searchParams: { query?: string; category?: string; tag?: string }
+    searchParams: Promise<{ query?: string; category?: string; tag?: string }>
 }) {
     const session = await getStudentSession()
     if (!session) return null
 
-    const { partners, tags, categories } = await searchMarketplace(session.academyId, searchParams)
+    const resolvedParams = await searchParams
+    const { partners, tags, categories } = await searchMarketplace(session.academyId, resolvedParams)
 
     // Find category name for display if active
-    const activeCategory = categories.find((c: any) => c.slug === searchParams.category)
+    const activeCategory = categories.find((c: any) => c.slug === resolvedParams.category)
 
     return (
         <div className="min-h-screen bg-[var(--color-background)]">
@@ -29,7 +30,7 @@ export default async function SearchPage({
                         </svg>
                     </Link>
                     <div className="flex-1">
-                        <SearchInput initialQuery={searchParams.query} />
+                        <SearchInput initialQuery={resolvedParams.query} />
                     </div>
                 </div>
 

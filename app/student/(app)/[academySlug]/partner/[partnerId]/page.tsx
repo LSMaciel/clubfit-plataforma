@@ -7,14 +7,14 @@ import { Ticket } from 'lucide-react'
 
 // Page Params
 interface PageProps {
-    params: {
+    params: Promise<{
         academySlug: string
         partnerId: string
-    }
+    }>
 }
 
 export default async function PartnerProfilePage({ params }: PageProps) {
-    const { academySlug, partnerId } = params
+    const { academySlug, partnerId } = await params
 
     // PROJ-011: Optimized Single Query (Removes Waterfall)
     const partner = await getPartnerProfile(academySlug, partnerId)
