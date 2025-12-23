@@ -50,7 +50,8 @@ export async function createBenefit(draft: PromotionDraft) {
   })
 
   if (!validation.success) {
-    return { error: 'Dados inválidos: ' + validation.error.errors[0].message }
+    const firstError = validation.error.errors?.[0]?.message || 'Erro desconhecido'
+    return { error: 'Dados inválidos: ' + firstError }
   }
 
   // 4. Insert to Database
