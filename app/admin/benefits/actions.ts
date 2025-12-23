@@ -50,7 +50,8 @@ export async function createBenefit(draft: PromotionDraft) {
   })
 
   if (!validation.success) {
-    const firstError = validation.error.errors?.[0]?.message || 'Erro desconhecido'
+    const zodError = validation.error as any
+    const firstError = zodError.errors?.[0]?.message || 'Erro desconhecido'
     return { error: 'Dados inválidos: ' + firstError }
   }
 
