@@ -352,7 +352,7 @@ export async function getPromotionsFeed(academySlug: string, categorySlug?: stri
 export async function getQuickCategories(academyId?: string) {
     const supabaseAdmin = createAdminClient()
 
-    let query = supabaseAdmin
+    let query: any = supabaseAdmin
         .from('categories')
         .select(`
             id, 
