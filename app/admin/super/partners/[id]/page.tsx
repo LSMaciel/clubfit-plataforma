@@ -73,7 +73,7 @@ export default async function SuperPartnerDetailPage({ params }: PageProps) {
                 <div className="lg:col-span-2">
                     <AcademyLinker
                         partnerId={id}
-                        initialLinks={links}
+                        initialLinks={links || []}
                         allAcademies={academies}
                     />
                 </div>
