@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import { StudentHeader } from '@/components/student/student-header'
 
 import { MaintenanceScreen, SuspendedScreen } from '@/components/student/status-screens'
+import { StudentNav } from './components/student-nav'
 
 export default async function StudentAppLayout({
     children,
@@ -63,11 +64,11 @@ export default async function StudentAppLayout({
                 primaryColor={primaryColor}
             />
 
-            <main className="pb-20">
+            <main className="pb-24">
                 {children}
             </main>
 
-            {/* TabBar de Navegação (Futuro) */}
+            <StudentNav />
         </div>
     )
 }

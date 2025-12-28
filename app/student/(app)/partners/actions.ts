@@ -34,7 +34,6 @@ export async function getPartners() {
         `)
         .eq('academy_id', session.academyId)
         .eq('status', 'ACTIVE')
-        // .eq('partner.benefits.status', 'ACTIVE') // Removendo temporariamente para debug
         .order('created_at', { ascending: false })
 
     if (error) {

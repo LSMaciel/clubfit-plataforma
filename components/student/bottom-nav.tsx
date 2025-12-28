@@ -2,6 +2,7 @@
 'use client'
 
 import { signOut } from '@/app/[slug]/benefits/actions'
+import Link from 'next/link'
 
 interface BottomNavProps {
   slug: string
@@ -12,33 +13,47 @@ export function BottomNav({ slug, primaryColor }: BottomNavProps) {
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] pb-safe">
       <div className="flex justify-around items-center h-16 max-w-md mx-auto">
-        
-        {/* Botão Home (Ativo) */}
-        <button className="flex flex-col items-center justify-center w-full h-full space-y-1">
-          <svg 
-            xmlns="http://www.w3.org/2000/svg" 
-            width="24" 
-            height="24" 
-            viewBox="0 0 24 24" 
-            fill="none" 
-            stroke="currentColor" 
-            strokeWidth="2" 
-            strokeLinecap="round" 
-            strokeLinejoin="round"
-            style={{ color: primaryColor }}
-          >
-            <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-            <polyline points="9 22 9 12 15 12 15 22"/>
-          </svg>
-          <span 
-            className="text-[10px] font-bold"
-            style={{ color: primaryColor }}
-          >
-            Início
-          </span>
-        </button>
 
-        {/* Botão Carteira (Placeholder Futuro) */}
+        {/* Botão Home (Ativo) */}
+        <Link href="/student/dashboard" className="flex flex-col items-center justify-center w-full h-full space-y-1">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="text-slate-600"
+          >
+            <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+            <polyline points="9 22 9 12 15 12 15 22" />
+          </svg>
+          <span className="text-[10px] font-medium text-slate-600">Início</span>
+        </Link>
+
+        {/* Botão Favoritos */}
+        <Link href="/student/favorites" className="flex flex-col items-center justify-center w-full h-full space-y-1">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="text-slate-600"
+          >
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+          </svg>
+          <span className="text-[10px] font-medium text-slate-600">Favoritos</span>
+        </Link>
+
+        {/* Botão Carteira (Placeholder) */}
         <button className="flex flex-col items-center justify-center w-full h-full space-y-1 opacity-40 cursor-not-allowed">
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-600">
             <rect width="20" height="14" x="2" y="5" rx="2" />
@@ -51,16 +66,16 @@ export function BottomNav({ slug, primaryColor }: BottomNavProps) {
 
         {/* Botão Sair */}
         <form action={async () => await signOut(slug)} className="w-full h-full">
-            <button type="submit" className="flex flex-col items-center justify-center w-full h-full space-y-1 group">
+          <button type="submit" className="flex flex-col items-center justify-center w-full h-full space-y-1 group">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400 group-hover:text-red-500 transition-colors">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                <polyline points="16 17 21 12 16 7" />
-                <line x1="21" x2="9" y1="12" y2="12" />
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" x2="9" y1="12" y2="12" />
             </svg>
             <span className="text-[10px] font-medium text-slate-400 group-hover:text-red-500 transition-colors">
-                Sair
+              Sair
             </span>
-            </button>
+          </button>
         </form>
 
       </div>

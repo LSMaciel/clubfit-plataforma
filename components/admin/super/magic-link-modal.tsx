@@ -39,7 +39,7 @@ export function MagicLinkModal({ academyId, academyName, isOpen, onClose }: Magi
         if (result.error) {
             setError(result.error)
         } else {
-            setAdmins(result.admins)
+            setAdmins(result.admins ?? [])
         }
         setLoading(false)
     }
@@ -53,7 +53,7 @@ export function MagicLinkModal({ academyId, academyName, isOpen, onClose }: Magi
         if (result.error) {
             setError(result.error)
         } else {
-            setMagicLink(result.url)
+            setMagicLink(result.url ?? '')
             setView('RESULT')
         }
         setLoading(false)

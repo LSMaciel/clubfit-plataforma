@@ -1,12 +1,10 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { useFormStatus } from 'react-dom'
 import { searchGlobalPartners, linkPartner, unlinkPartner } from '@/app/admin/partners/actions'
-import { useDebounce } from '@/hooks/use-debounce' // Assuming a hook exists, or I'll implement simple debounce
 import Link from 'next/link'
 
-// Quick debounce implementation if hook doesn't exist
+// Quick debounce implementation since hook doesn't exist
 function useDebounceValue<T>(value: T, delay: number): T {
     const [debouncedValue, setDebouncedValue] = useState<T>(value)
     useEffect(() => {

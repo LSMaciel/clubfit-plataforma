@@ -36,8 +36,9 @@ export function StepConfiguration({ type, initialData, onHtmlSubmit, onCancel }:
     })
 
     const coverImage = watch('cover_image_url')
-    const configValue = watch('config.value')
-    const originalPrice = watch('config.original_price')
+    // Safe casting for dynamic union paths
+    const configValue = Number(watch('config.value' as any) || 0)
+    const originalPrice = Number(watch('config.original_price' as any) || 0)
 
     // Price Calculation Logic
     const finalPrice = (() => {
@@ -66,6 +67,8 @@ export function StepConfiguration({ type, initialData, onHtmlSubmit, onCancel }:
     }
 
     const renderConfigFields = () => {
+        const configErrors = errors.config as any
+
         switch (type) {
             case PromotionType.DISCOUNT_PERCENTAGE:
                 return (
@@ -75,21 +78,21 @@ export function StepConfiguration({ type, initialData, onHtmlSubmit, onCancel }:
                                 <label className="block text-sm font-bold text-blue-900 mb-1">Preço Original (R$)</label>
                                 <input
                                     type="number" step="0.01"
-                                    {...register('config.original_price')}
+                                    {...register('config.original_price' as any)}
                                     className="w-full p-2 rounded border border-blue-200 focus:ring-blue-500"
                                     placeholder="0.00"
                                 />
-                                {errors.config?.original_price && <p className="text-red-500 text-xs mt-1">{String(errors.config?.original_price?.message)}</p>}
+                                {configErrors?.original_price && <p className="text-red-500 text-xs mt-1">{String(configErrors.original_price.message)}</p>}
                             </div>
                             <div>
                                 <label className="block text-sm font-bold text-blue-900 mb-1">Desconto (%)</label>
                                 <input
                                     type="number"
-                                    {...register('config.value')}
+                                    {...register('config.value' as any)}
                                     className="w-full p-2 rounded border border-blue-200 focus:ring-blue-500"
                                     placeholder="Ex: 20"
                                 />
-                                {errors.config?.value && <p className="text-red-500 text-xs mt-1">{String(errors.config?.value?.message)}</p>}
+                                {configErrors?.value && <p className="text-red-500 text-xs mt-1">{String(configErrors.value.message)}</p>}
                             </div>
                         </div>
 
@@ -111,21 +114,21 @@ export function StepConfiguration({ type, initialData, onHtmlSubmit, onCancel }:
                                 <label className="block text-sm font-bold text-green-900 mb-1">Preço Original (R$)</label>
                                 <input
                                     type="number" step="0.01"
-                                    {...register('config.original_price')}
+                                    {...register('config.original_price' as any)}
                                     className="w-full p-2 rounded border border-green-200 focus:ring-green-500"
                                     placeholder="0.00"
                                 />
-                                {errors.config?.original_price && <p className="text-red-500 text-xs mt-1">{String(errors.config?.original_price?.message)}</p>}
+                                {configErrors?.original_price && <p className="text-red-500 text-xs mt-1">{String(configErrors.original_price.message)}</p>}
                             </div>
                             <div>
                                 <label className="block text-sm font-bold text-green-900 mb-1">Valor do Desconto (R$)</label>
                                 <input
                                     type="number" step="0.01"
-                                    {...register('config.value')}
+                                    {...register('config.value' as any)}
                                     className="w-full p-2 rounded border border-green-200 focus:ring-green-500"
                                     placeholder="10.00"
                                 />
-                                {errors.config?.value && <p className="text-red-500 text-xs mt-1">{String(errors.config?.value?.message)}</p>}
+                                {configErrors?.value && <p className="text-red-500 text-xs mt-1">{String(configErrors.value.message)}</p>}
                             </div>
                         </div>
                         {finalPrice !== null && (
@@ -143,14 +146,14 @@ export function StepConfiguration({ type, initialData, onHtmlSubmit, onCancel }:
                     <div className="bg-purple-50 p-4 rounded-lg border border-purple-100 flex gap-4">
                         <div className="flex-1">
                             <label className="block text-sm font-bold text-purple-900 mb-1">Compre (Qtd)</label>
-                            <input type="number" {...register('config.buy_qty')} className="w-full p-2 rounded border border-purple-200" placeholder="1" />
-                            {errors.config?.buy_qty && <p className="text-red-500 text-xs mt-1">{String(errors.config?.buy_qty?.message)}</p>}
+                            <input type="number" {...register('config.buy_qty' as any)} className="w-full p-2 rounded border border-purple-200" placeholder="1" />
+                            {configErrors?.buy_qty && <p className="text-red-500 text-xs mt-1">{String(configErrors.buy_qty.message)}</p>}
                         </div>
                         <div className="flex items-center pt-6 text-purple-400 font-bold">LEVE</div>
                         <div className="flex-1">
                             <label className="block text-sm font-bold text-purple-900 mb-1">Ganhe (Qtd)</label>
-                            <input type="number" {...register('config.get_qty')} className="w-full p-2 rounded border border-purple-200" placeholder="1" />
-                            {errors.config?.get_qty && <p className="text-red-500 text-xs mt-1">{String(errors.config?.get_qty?.message)}</p>}
+                            <input type="number" {...register('config.get_qty' as any)} className="w-full p-2 rounded border border-purple-200" placeholder="1" />
+                            {configErrors?.get_qty && <p className="text-red-500 text-xs mt-1">{String(configErrors.get_qty.message)}</p>}
                         </div>
                     </div>
                 )
@@ -160,11 +163,11 @@ export function StepConfiguration({ type, initialData, onHtmlSubmit, onCancel }:
                         <label className="block text-sm font-bold text-pink-900 mb-1">Nome do Brinde</label>
                         <input
                             type="text"
-                            {...register('config.gift_name')}
+                            {...register('config.gift_name' as any)}
                             className="w-full p-2 rounded border border-pink-200 focus:ring-pink-500"
                             placeholder="Ex: Garrafinha Exclusiva"
                         />
-                        {errors.config?.gift_name && <p className="text-red-500 text-xs mt-1">{String(errors.config?.gift_name?.message)}</p>}
+                        {configErrors?.gift_name && <p className="text-red-500 text-xs mt-1">{String(configErrors.gift_name.message)}</p>}
                     </div>
                 )
             default:

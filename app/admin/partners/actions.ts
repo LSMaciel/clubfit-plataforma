@@ -29,9 +29,14 @@ export async function createPartner(prevState: any, formData: FormData) {
 
   const effectiveAcademyId = await getEffectiveAcademyId(adminProfile)
 
-  if (!effectiveAcademyId) {
-    return { error: 'Nenhuma academia selecionada (Use o seletor no topo se for Super Admin).' }
+  // FIX: Se for SUPER_ADMIN, permitir criar sem academy_id (Partner Global sem vínculo inicial)
+  // Se for ACADEMY_ADMIN, obrigar ter academy_id.
+  if (adminProfile.role !== 'SUPER_ADMIN' && !effectiveAcademyId) {
+    return { error: 'Nenhuma academia identificada para vincular o parceiro.' }
   }
+
+  // Se for Super Admin e não tiver academia selecionada, é uma criação puramente Global.
+  // Se tiver academia selecionada, criamos Global e já vinculamos.
 
   // 2. Dados do Formulário
   const partnerName = formData.get('partner_name') as string
@@ -138,7 +143,8 @@ export async function createPartner(prevState: any, formData: FormData) {
       state: state || null,
       complement: complement || null,
       latitude: latitude,
-      longitude: longitude
+      longitude: longitude,
+      logo_url: formData.get('logo_url') as string || null
     })
     .select()
     .single()
@@ -150,23 +156,29 @@ export async function createPartner(prevState: any, formData: FormData) {
     return { error: 'Erro ao criar registro da empresa parceira. Verifique se o CNPJ é válido.' }
   }
 
-  // 7. CRITICAL: VINCULAR IMEDIATAMENTE (Criação do Link)
-  const { error: linkError } = await supabaseAdmin
-    .from('academy_partners')
-    .insert({
-      academy_id: effectiveAcademyId,
-      partner_id: newPartner.id,
-      status: 'ACTIVE'
-    })
+  // 7. VINCULAR OPICIONALMENTE (Se houver academy_id)
+  if (effectiveAcademyId) {
+    const { error: linkError } = await supabaseAdmin
+      .from('academy_partners')
+      .insert({
+        academy_id: effectiveAcademyId,
+        partner_id: newPartner.id,
+        status: 'ACTIVE'
+      })
 
-  if (linkError) {
-    console.error('Erro Link:', linkError)
-    // Situação delicada: Parceiro criado, mas não vinculado.
-    // Retornamos erro mas o parceiro existe. O usuário terá que ir em "Explorar" e vincular.
-    return { error: 'Parceiro criado, mas houve erro ao vincular automaticamente. Por favor, busque-o na aba "Explorar" e clique em Vincular.' }
+    if (linkError) {
+      console.error('Erro Link:', linkError)
+      return { error: 'Parceiro criado, mas houve erro ao vincular automaticamente. Por favor, busque-o na aba "Explorar" e clique em Vincular.' }
+    }
   }
 
   revalidatePath('/admin/partners')
+
+  // Se não houve link (Criação Global Pura), redirecionar para a lista global ou explorer
+  if (!effectiveAcademyId) {
+    redirect('/admin/super/partners')
+  }
+
   redirect('/admin/partners')
 }
 

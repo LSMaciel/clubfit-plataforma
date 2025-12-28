@@ -195,6 +195,13 @@ export default function NewPartnerPage() {
                                                     autoComplete="off"
                                                 />
                                             </div>
+                                            <div className="col-span-2">
+                                                <FormInput
+                                                    label="URL do Logo (Opcional)"
+                                                    name="logo_url"
+                                                    placeholder="https://site.com/logo.png"
+                                                />
+                                            </div>
                                         </div>
 
                                         {/* Componente Inteligente de Endereço */}

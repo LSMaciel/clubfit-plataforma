@@ -81,4 +81,28 @@ export async function createBenefit(draft: PromotionDraft) {
   // We return success here and let the client redirect, or redirect directly.
   // Redirect inside server action acts as throw, preventing further execution.
   redirect('/admin/benefits')
+  // Redirect inside server action acts as throw, preventing further execution.
+  redirect('/admin/benefits')
+}
+
+export async function toggleBenefitStatus(id: string, currentStatus: string) {
+  const supabase = await createClient()
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Unauthorized' }
+
+  const newStatus = currentStatus === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE'
+
+  const { error } = await supabase
+    .from('benefits')
+    .update({ status: newStatus })
+    .eq('id', id)
+
+  if (error) {
+    console.error('Error updating status:', error)
+    return { error: 'Falha ao atualizar status' }
+  }
+
+  revalidatePath('/admin/benefits')
+  return { success: true }
 }

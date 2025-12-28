@@ -44,41 +44,60 @@ export function AddressForm() {
     const fetchAddress = async (cep: string) => {
         setLoading(true)
         try {
-            const response = await fetch(`https://brasilapi.com.br/api/cep/v2/${cep}`)
-
-            if (!response.ok) {
-                throw new Error('CEP não encontrado')
+            // Tentativa 1: BrasilAPI (V2)
+            try {
+                const response = await fetch(`https://brasilapi.com.br/api/cep/v2/${cep}`, { signal: AbortSignal.timeout(5000) })
+                if (response.ok) {
+                    const data = await response.json()
+                    updateAddressFields({
+                        street: data.street,
+                        neighborhood: data.neighborhood,
+                        city: data.city,
+                        state: data.state
+                    })
+                    if (data.location?.coordinates) {
+                        setCoordinates({
+                            lat: data.location.coordinates.latitude,
+                            lng: data.location.coordinates.longitude
+                        })
+                    }
+                    return // Sucesso
+                }
+            } catch (err) {
+                console.warn('BrasilAPI falhou, tentando ViaCEP...', err)
             }
 
-            const data = await response.json()
+            // Tentativa 2: ViaCEP (Fallback)
+            const viaCepResponse = await fetch(`https://viacep.com.br/ws/${cep}/json/`)
+            if (!viaCepResponse.ok) throw new Error('CEP não encontrado no ViaCEP')
 
-            const newAddress = {
-                street: data.street,
-                neighborhood: data.neighborhood,
-                city: data.city,
-                state: data.state
-            }
+            const viaCepData = await viaCepResponse.json()
+            if (viaCepData.erro) throw new Error('CEP inexistente')
 
-            setAddressData(newAddress)
-
-            if (data.location?.coordinates) {
-                setCoordinates({
-                    lat: data.location.coordinates.latitude,
-                    lng: data.location.coordinates.longitude
-                })
-            }
-
-            // Foca no número automaticamente
-            setTimeout(() => {
-                numberInputRef.current?.focus()
-            }, 100)
+            updateAddressFields({
+                street: viaCepData.logradouro,
+                neighborhood: viaCepData.bairro,
+                city: viaCepData.localidade,
+                state: viaCepData.uf
+            })
 
         } catch (error) {
             console.error('Erro ao buscar CEP:', error)
             // Fallback silencioso: deixa o usuário digitar manualmente
         } finally {
             setLoading(false)
+            // Foca no número automaticamente se houve sucesso (independente da API)
+            setTimeout(() => {
+                numberInputRef.current?.focus()
+            }, 100)
         }
+    }
+
+    const updateAddressFields = (data: AddressData) => {
+        setAddressData(prev => ({
+            ...prev,
+            ...data
+        }))
     }
 
     const handleManualChange = (field: keyof AddressData, value: string) => {

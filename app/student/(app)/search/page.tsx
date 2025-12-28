@@ -1,9 +1,9 @@
 import { getStudentSession } from '@/utils/auth-student'
-import { searchMarketplace } from '@/app/student/actions'
+import { searchMarketplace, getQuickCategories, getFavorites } from '@/app/student/actions'
 import { PartnerCard } from '@/components/student/partner-card'
-import { FilterScroll } from '@/components/student/filter-scroll'
+import { CategoryPills } from '../components/category-pills'
 import Link from 'next/link'
-import { SearchInput } from '@/components/student/search-input' // Will create this small client component
+import { SearchInput } from '@/components/student/search-input'
 
 export default async function SearchPage({
     searchParams,
@@ -14,15 +14,22 @@ export default async function SearchPage({
     if (!session) return null
 
     const resolvedParams = await searchParams
-    const { partners, tags, categories } = await searchMarketplace(session.academyId, resolvedParams)
 
-    // Find category name for display if active
+    // Parallel Fetch (Search + Quick Categories + Favorites)
+    const [searchResult, categories, favoritesList] = await Promise.all([
+        searchMarketplace(session.academyId, resolvedParams),
+        getQuickCategories(session.academyId),
+        getFavorites()
+    ])
+
+    const { partners } = searchResult
+    const favoriteIds = favoritesList.map((f: any) => f.item_id)
     const activeCategory = categories.find((c: any) => c.slug === resolvedParams.category)
 
     return (
-        <div className="min-h-screen bg-[var(--color-background)]">
+        <div className="min-h-screen bg-[var(--color-background)] pb-24">
             {/* Header / Search Bar */}
-            <div className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-slate-100 p-4 space-y-3">
+            <div className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-slate-100 px-4 py-3 space-y-3">
                 <div className="flex items-center gap-3">
                     <Link href="/student/dashboard" className="p-2 -ml-2 text-slate-400 hover:text-slate-600">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
@@ -34,8 +41,8 @@ export default async function SearchPage({
                     </div>
                 </div>
 
-                {/* Filters */}
-                <FilterScroll tags={tags} />
+                {/* Filters (Using same component as Home) */}
+                <CategoryPills categories={categories} />
             </div>
 
             {/* Content */}
@@ -59,7 +66,8 @@ export default async function SearchPage({
                             <PartnerCard
                                 key={partner.id}
                                 partner={partner}
-                                academySlug="clubfit" // We can fetch this if needed, for now standard
+                                academySlug="clubfit"
+                                isFavorite={favoriteIds.includes(partner.id)}
                             />
                         ))}
                     </div>

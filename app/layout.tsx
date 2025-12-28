@@ -15,7 +15,10 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
     title: 'ClubFit',
     description: 'Plataforma White-label de fidelidade e benefícios.',
+    manifest: '/manifest.json',
 }
+
+import { InstallBanner } from '@/components/shared/install-banner'
 
 export default function RootLayout({
     children,
@@ -24,7 +27,10 @@ export default function RootLayout({
 }) {
     return (
         <html lang="pt-BR">
-            <body className={inter.className}>{children}</body>
+            <body className={inter.className}>
+                {children}
+                <InstallBanner />
+            </body>
         </html>
     )
 }
