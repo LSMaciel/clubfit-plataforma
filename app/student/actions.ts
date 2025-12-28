@@ -400,7 +400,7 @@ export async function getQuickCategories(academyId?: string) {
     // Remove duplicates manually if necessary (PostgREST sometimes duplicates on joins)
     const uniqueCategories = data ? Array.from(new Map(data.map((item: any) => [item.id, item])).values()) : []
 
-    return uniqueCategories
+    return uniqueCategories as { id: string; name: string; slug: string; icon_name: string }[]
 }
 
 // STORY-007: Favorites Actions
