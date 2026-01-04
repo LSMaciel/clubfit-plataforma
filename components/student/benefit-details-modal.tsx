@@ -42,7 +42,7 @@ export function BenefitDetailsModal(props: BenefitDetailsModalProps) {
     const price = calculateFinalPrice(props.type || null, props.configuration)
 
     return (
-        <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
+        <div className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center">
             {/* Backdrop */}
             <div
                 className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
@@ -98,7 +98,7 @@ export function BenefitDetailsModal(props: BenefitDetailsModalProps) {
                 </div>
 
                 {/* Scrollable Content */}
-                <div className="p-6 overflow-y-auto">
+                <div className="p-6 overflow-y-auto flex-1">
                     {/* Header Info */}
                     <div className="flex justify-between items-start mb-4">
                         <div>

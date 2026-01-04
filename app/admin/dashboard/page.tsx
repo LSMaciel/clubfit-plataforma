@@ -4,17 +4,23 @@ import Link from 'next/link'
 import { PageShell } from '@/components/admin/page-shell' // Import PageShell
 import { FinancialAlertsWidget } from '@/components/admin/super/financial-alerts-widget'
 import { ChurnAlertWidget } from '@/components/admin/super/churn-alert-widget'
-import { getAdminDashboardData, getAcademyPartnersRanking } from '@/app/admin/dashboard/actions'
+import { getAdminDashboardData, getAcademyPartnersRanking, getPartnerDashboardData } from '@/app/admin/dashboard/actions'
+import { PartnerDashboardView } from '@/components/admin/partner-dashboard-view'
 import { KPICard } from '@/components/admin/kpi-card'
 import { EconomyChart } from '@/components/admin/economy-chart'
 import { PartnersRankingTable } from '@/components/admin/partners-ranking-table'
 import { Activity, CreditCard, DollarSign, TrendingUp, Users } from 'lucide-react'
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+    searchParams
+}: {
+    searchParams?: { [key: string]: string | string[] | undefined }
+}) {
     const supabase = await createClient()
+    // ... existing auth ...
     const { data: { user } } = await supabase.auth.getUser()
 
-    // Buscar dados do perfil
+    // ... fetch profile ...
     const { data: profile } = await supabase
         .from('users')
         .select('*')
@@ -25,20 +31,42 @@ export default async function DashboardPage() {
     const isAcademyAdmin = profile?.role === 'ACADEMY_ADMIN'
     const isPartner = profile?.role === 'PARTNER'
 
-    // BI Data Fetching (Only for Academy/Super)
+    // PARTNER DASHBOARD LOGIC
+    if (isPartner) {
+        const startDate = typeof searchParams?.startDate === 'string' ? searchParams.startDate : undefined
+        const endDate = typeof searchParams?.endDate === 'string' ? searchParams.endDate : undefined
+
+        const partnerData = await getPartnerDashboardData(startDate, endDate)
+
+        return (
+            <PageShell
+                title="Visão Geral"
+                subtitle="Acompanhe o desempenho do seu negócio."
+            >
+                {partnerData ? (
+                    <PartnerDashboardView data={partnerData} />
+                ) : (
+                    <div>Erro ao carregar dados.</div>
+                )}
+            </PageShell>
+        )
+    }
+
+    // ACADEMY ADMIN LOGIC (Existing)
+    // ... existing code ...
+    // BI Data Fetching
     let kpiData = null
     let rankingData = []
 
     if (isAcademyAdmin || isSuperAdmin) {
         kpiData = await getAdminDashboardData()
-        rankingData = await getAcademyPartnersRanking(30) // Last 30 days
+        rankingData = await getAcademyPartnersRanking(30)
     }
 
-    // Process Data for View
+    // ... process data ...
     const currentEconomy = kpiData?.current_month.economy || 0
     const prevEconomy = kpiData?.previous_month.economy || 0
 
-    // Calculate Trend
     let trend = 'neutral' as 'up' | 'down' | 'neutral'
     let trendValue = ''
 
@@ -48,11 +76,10 @@ export default async function DashboardPage() {
         trendValue = `${delta > 0 ? '+' : ''}${delta.toFixed(1)}%`
     } else if (currentEconomy > 0) {
         trend = 'up'
-        trendValue = '+100%' // First month growth
+        trendValue = '+100%'
     }
 
     const moneyFormatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
-
     const currentDate = new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
 
     return (
@@ -60,10 +87,9 @@ export default async function DashboardPage() {
             title="Visão Geral"
             subtitle={`Resumo de desempenho de ${currentDate}`}
         >
-            {/* SECTION: ACADEMY BI (KPIs) */}
+            {/* Same generic KPIs ... */}
             {(isAcademyAdmin || isSuperAdmin) && (
                 <div className="space-y-6 mb-10">
-                    {/* KPI Cards */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <KPICard
                             title="Economia Gerada (Mês)"
@@ -86,18 +112,15 @@ export default async function DashboardPage() {
                             description="usuários únicos dia"
                         />
                     </div>
-
-                    {/* Chart & Ranking Row */}
+                    {/* ... Chart & Table ... */}
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <div className="lg:col-span-2 space-y-6">
                             <EconomyChart data={kpiData?.daily_series || []} />
-
-                            {/* Partners Ranking Table */}
                             <PartnersRankingTable data={rankingData} />
                         </div>
-
-                        {/* Right Column */}
+                        {/* Right Col */}
                         <div className="space-y-6">
+                            {/* ... Dica ... */}
                             <div>
                                 <h3 className="font-bold text-lg mb-2 text-slate-900">Dica ClubFit 🚀</h3>
                                 <p className="text-slate-600 text-sm leading-relaxed">
@@ -105,16 +128,7 @@ export default async function DashboardPage() {
                                     Quanto mais economia gerada, maior a percepção de valor da mensalidade.
                                 </p>
                             </div>
-                            <div className="mt-6 pt-6 border-t border-slate-200">
-                                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Meta do Mês</span>
-                                <div className="flex items-end gap-2">
-                                    <span className="text-3xl font-bold text-slate-900">R$ 5k</span>
-                                    <span className="text-sm text-slate-400 mb-1">em economia</span>
-                                </div>
-                                <div className="w-full bg-slate-100 h-2 rounded-full mt-2 overflow-hidden">
-                                    <div className="bg-indigo-600 h-full rounded-full" style={{ width: '45%' }}></div>
-                                </div>
-                            </div>
+                            {/* ... Meta ... */}
                         </div>
                     </div>
                 </div>

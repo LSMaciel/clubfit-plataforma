@@ -1,16 +1,24 @@
+'use client'
+
 import { useState, useTransition } from 'react'
 import { PromotionDraft, PromotionType } from './types'
 import { StepTypeSelector } from './step-type-selector'
 import { StepConfiguration } from './step-configuration'
 import { StepPreview } from './step-preview'
-import { createBenefit } from '@/app/admin/benefits/actions'
+import { createBenefit, updateBenefit } from '@/app/admin/benefits/actions'
 import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
 
-export function PromotionWizard() {
-    const [step, setStep] = useState(1)
+interface PromotionWizardProps {
+    initialData?: PromotionDraft
+    benefitId?: string
+}
+
+export function PromotionWizard({ initialData, benefitId }: PromotionWizardProps) {
+    // If editing, start at step 2 (Config), otherwise Step 1 (Type)
+    const [step, setStep] = useState(initialData ? 2 : 1)
     const [isPending, startTransition] = useTransition()
-    const [draft, setDraft] = useState<PromotionDraft>({
+    const [draft, setDraft] = useState<PromotionDraft>(initialData || {
         type: null,
         title: '',
         configuration: {},
@@ -32,6 +40,7 @@ export function PromotionWizard() {
             ...prev,
             title: data.title,
             description: data.description,
+            main_image_url: data.main_image_url,
             cover_image_url: data.cover_image_url,
             configuration: data.configuration,
             constraints: data.constraints
@@ -41,9 +50,17 @@ export function PromotionWizard() {
 
     const handlePublish = () => {
         startTransition(async () => {
-            const result = await createBenefit(draft)
+            let result;
+            if (benefitId) {
+                // Edit Mode
+                result = await updateBenefit(benefitId, draft)
+            } else {
+                // Create Mode
+                result = await createBenefit(draft)
+            }
+
             if (result?.error) {
-                alert(result.error) // Fallback alert
+                alert(result.error)
             } else {
                 // Redirect happens on server
             }

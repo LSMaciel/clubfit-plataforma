@@ -27,6 +27,7 @@ export default async function PartnerProfilePage({ params }: PageProps) {
             <PartnerHeader
                 name={partner.name}
                 logoUrl={partner.logo_url}
+                coverUrl={partner.cover_url}
                 galleryUrls={partner.gallery_urls}
                 academySlug={academySlug}
             />

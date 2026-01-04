@@ -80,7 +80,10 @@ export async function AdminHeader() {
 
             {/* Navigation Bar */}
             <div className="px-8 flex">
-                <AdminNav role={profile?.role} />
+                <AdminNav
+                    role={profile?.role}
+                    isGlobalContext={isSuperAdmin && !currentContextId}
+                />
             </div>
         </header>
     )

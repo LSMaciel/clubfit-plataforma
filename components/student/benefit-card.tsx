@@ -15,6 +15,7 @@ interface BenefitCardProps {
     primaryColor: string
     // New props for Smart Cards
     type?: string | null
+    main_image_url?: string | null
     cover_image_url?: string | null
     configuration?: any
     constraints?: any
@@ -70,6 +71,8 @@ export function BenefitCard(props: BenefitCardProps) {
         setDetailsOpen(true)
     }
 
+    const displayImage = props.main_image_url || props.cover_image_url
+
     return (
         <>
             <div
@@ -83,9 +86,9 @@ export function BenefitCard(props: BenefitCardProps) {
 
                 {/* Cover Image & Badge */}
                 <div className="relative h-36 bg-slate-200 overflow-hidden">
-                    {props.cover_image_url ? (
+                    {displayImage ? (
                         <img
-                            src={props.cover_image_url}
+                            src={displayImage}
                             alt={title}
                             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                         />

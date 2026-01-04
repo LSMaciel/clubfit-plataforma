@@ -32,6 +32,7 @@ const giftConfig = z.object({
 export const baseFormSchema = z.object({
     title: z.string().min(5, 'O título deve ter pelo menos 5 letras').max(60, 'Máximo 60 caracteres'),
     description: z.string().max(200, 'Máximo 200 caracteres').optional(),
+    main_image_url: z.string().optional(),
     cover_image_url: z.string().optional(),
 
     // Constraints

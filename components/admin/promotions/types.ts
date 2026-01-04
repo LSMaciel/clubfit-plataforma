@@ -11,6 +11,7 @@ export interface PromotionDraft {
     type: PromotionType | null
     title: string
     description?: string
+    main_image_url?: string
     cover_image_url?: string
     // We will type these more strictly in future steps
     configuration: Record<string, any>

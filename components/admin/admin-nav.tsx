@@ -6,38 +6,55 @@ import { cn } from '@/utils/cn'
 
 interface AdminNavProps {
     role?: string
+    isGlobalContext?: boolean
 }
 
-export function AdminNav({ role }: AdminNavProps) {
+export function AdminNav({ role, isGlobalContext = false }: AdminNavProps) {
     const pathname = usePathname()
 
     const isPartner = role === 'PARTNER'
-    const isAdmin = role === 'ACADEMY_ADMIN' || role === 'SUPER_ADMIN'
+    const isSuperAdmin = role === 'SUPER_ADMIN'
+    const isAdmin = role === 'ACADEMY_ADMIN' || isSuperAdmin
+
+    // Visibility Logic:
+    // - Super Admin Global: Can see Academies. Cannot see generic Academy links (unless we want to).
+    // - Super Admin Context: Can see Academy links (Dashboard, Partners...). Can ALSO see Academies link (to go back).
+
+    // If Global Context, generic "manage academy" links should be hidden because there is no target academy.
+    const showAcademyLinks = isAdmin && !isGlobalContext
 
     const navItems = [
-        // Admin Links
+        // ACADEMY CONTEXT LINKS (Dashboard First)
         {
             label: 'Dashboard',
             href: '/admin/dashboard',
-            visible: isAdmin,
+            visible: showAcademyLinks || (isSuperAdmin && isGlobalContext), // Global Dashboard exists too
             activeInfo: '/admin/dashboard'
+        },
+
+        // SUPER ADMIN GLOBAL LINKS
+        {
+            label: 'Academias',
+            href: '/admin/super/academies',
+            visible: isSuperAdmin,
+            activeInfo: '/admin/super/academies'
         },
         {
             label: 'Parceiros',
             href: '/admin/partners',
-            visible: isAdmin,
+            visible: showAcademyLinks,
             activeInfo: '/admin/partners'
         },
         {
             label: 'Alunos',
             href: '/admin/students',
-            visible: isAdmin,
+            visible: showAcademyLinks,
             activeInfo: '/admin/students'
         },
         {
             label: 'Personalizar',
             href: '/admin/settings',
-            visible: isAdmin,
+            visible: showAcademyLinks,
             activeInfo: '/admin/settings'
         },
         // Partner Links (Also visible to admin for testing/usage)
@@ -52,6 +69,12 @@ export function AdminNav({ role }: AdminNavProps) {
             href: '/admin/benefits',
             visible: isPartner, // Apenas parceiros gerenciam suas próprias promos aqui por enquanto
             activeInfo: '/admin/benefits'
+        },
+        {
+            label: 'Meu Negócio',
+            href: '/admin/profile',
+            visible: isPartner,
+            activeInfo: '/admin/profile'
         }
     ]
 

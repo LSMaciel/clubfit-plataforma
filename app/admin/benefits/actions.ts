@@ -16,17 +16,15 @@ export async function createBenefit(draft: PromotionDraft) {
   }
 
   // 2. Resolve User & Partner Context
-  // Query User for Academy ID (Global Partners MVP assumes User is tied to Academy context)
+  // Query User for Academy ID
   const { data: userData, error: userError } = await supabase
     .from('users')
     .select('academy_id')
     .eq('id', user.id)
     .single()
 
-  if (userError || !userData?.academy_id) {
-    console.error('User Academy ID not found:', user.id)
-    return { error: 'Seu usuário não está vinculado a nenhuma academia.' }
-  }
+  // We no longer block if academy_id is missing (Global Partner support)
+  // if (userError || !userData?.academy_id) { ... }
 
   // Query Partner owned by User (partners table is Global, no academy_id)
   const { data: partner, error: partnerError } = await supabase
@@ -41,7 +39,6 @@ export async function createBenefit(draft: PromotionDraft) {
   }
 
   // 3. Validation (Re-run Zod on Server)
-  // Ideally we would validate the specific strategy schema too, but base is a good start for the wrapper.
   const validation = baseFormSchema.safeParse({
     title: draft.title,
     description: draft.description,
@@ -60,14 +57,15 @@ export async function createBenefit(draft: PromotionDraft) {
     .from('benefits')
     .insert({
       partner_id: partner.id,
-      academy_id: userData.academy_id, // Use User's Academy Context
+      academy_id: userData?.academy_id || null, // Allow null
       title: draft.title,
       description: draft.description,
       type: draft.type,
+      main_image_url: draft.main_image_url,
       cover_image_url: draft.cover_image_url,
       configuration: draft.configuration,
       constraints: draft.constraints,
-      rules: `Regras geradas automaticamente: Tipo ${draft.type}`, // Simple fallback for text rules column
+      rules: `Regras geradas automaticamente: Tipo ${draft.type}`,
       status: 'ACTIVE'
     })
 
@@ -105,4 +103,67 @@ export async function toggleBenefitStatus(id: string, currentStatus: string) {
 
   revalidatePath('/admin/benefits')
   return { success: true }
+}
+
+export async function updateBenefit(benefitId: string, draft: PromotionDraft) {
+  const supabase = await createClient()
+
+  // 1. Auth and Ownership Check
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Usuário não autenticado' }
+
+  // Check if benefit exists and belongs to a partner owned by user
+  const { data: benefit, error: fetchError } = await supabase
+    .from('benefits')
+    .select('*, partners!inner(owner_id)')
+    .eq('id', benefitId)
+    .eq('partners.owner_id', user.id)
+    .single()
+
+  if (fetchError || !benefit) {
+    return { error: 'Promoção não encontrada ou sem permissão para editar.' }
+  }
+
+  // 2. Validation
+  const validation = baseFormSchema.safeParse({
+    title: draft.title,
+    description: draft.description,
+    min_spend: draft.constraints?.min_spend,
+    channel: draft.constraints?.channel
+  })
+
+  if (!validation.success) {
+    const zodError = validation.error as any
+    const firstError = zodError.errors?.[0]?.message || 'Erro desconhecido'
+    return { error: 'Dados inválidos: ' + firstError }
+  }
+
+  // 3. Update
+  const { error: updateError } = await supabase
+    .from('benefits')
+    .update({
+      title: draft.title,
+      description: draft.description,
+      // type: draft.type, // Usually type shouldn't change easily, but let's allow if necessary, or keep standard
+      cover_image_url: draft.cover_image_url,
+      main_image_url: draft.main_image_url,
+      configuration: draft.configuration,
+      constraints: draft.constraints,
+      rules: `Regras geradas automaticamente: Tipo ${draft.type || benefit.type}`,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', benefitId)
+
+  if (updateError) {
+    console.error('Update Benefit Error:', updateError)
+    return { error: 'Erro ao atualizar promoção.' }
+  }
+
+  // FORCE Revalidation of Student App
+  revalidatePath('/student/dashboard')
+  revalidatePath('/student/search')
+  revalidatePath('/student/(app)', 'layout') // Revalidate layout just in case
+  revalidatePath('/admin/benefits')
+
+  redirect('/admin/benefits')
 }

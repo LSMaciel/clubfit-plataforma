@@ -12,24 +12,59 @@ export function ImageUploader({ value, onChange, label = 'Imagem de Capa', class
     const [preview, setPreview] = useState<string | undefined>(value)
     const fileInputRef = useRef<HTMLInputElement>(null)
 
-    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const compressImage = async (file: File): Promise<string> => {
+        return new Promise((resolve) => {
+            const reader = new FileReader()
+            reader.readAsDataURL(file)
+            reader.onload = (event) => {
+                const img = new Image()
+                img.src = event.target?.result as string
+                img.onload = () => {
+                    const canvas = document.createElement('canvas')
+                    let width = img.width
+                    let height = img.height
+
+                    // Max width 1200px
+                    const MAX_WIDTH = 1200
+                    if (width > MAX_WIDTH) {
+                        height = (MAX_WIDTH * height) / width
+                        width = MAX_WIDTH
+                    }
+
+                    canvas.width = width
+                    canvas.height = height
+                    const ctx = canvas.getContext('2d')
+                    ctx?.drawImage(img, 0, 0, width, height)
+
+                    // Compression 0.8 quality
+                    const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8)
+                    resolve(compressedDataUrl)
+                }
+            }
+        })
+    }
+
+    const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0]
         if (!file) return
 
-        // Basic Client-Side Validation (Size < 5MB)
-        if (file.size > 5 * 1024 * 1024) {
-            alert('A imagem deve ter no máximo 5MB')
+        // Basic validation - check if it is image
+        if (!file.type.startsWith('image/')) {
+            alert('Por favor, selecione apenas arquivos de imagem.')
             return
         }
 
-        // Create Object URL for Preview
-        const objectUrl = URL.createObjectURL(file)
-        setPreview(objectUrl)
+        try {
+            // Compress
+            const compressedUrl = await compressImage(file)
 
-        // Simulating Upload for MVP: 
-        // In a real scenario, we would upload to Supabase Storage here and get the public URL.
-        // For now, we pass the local Object URL effectively treating it as "uploaded" for the session.
-        onChange(objectUrl)
+            // Set Preview & Value
+            setPreview(compressedUrl)
+            onChange(compressedUrl)
+        } catch (error) {
+            console.error('Erro ao processar imagem', error)
+            alert('Erro ao processar imagem.')
+        }
     }
 
     const handleRemove = (e: React.MouseEvent) => {

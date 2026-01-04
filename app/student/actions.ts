@@ -64,6 +64,8 @@ export async function getMarketplaceData(academyId: string) {
             name, 
             description, 
             address, 
+            logo_url,
+            cover_url,
             academy_partners!inner(status),
             benefits(title)
         `)
@@ -78,6 +80,8 @@ export async function getMarketplaceData(academyId: string) {
         name: p.name,
         description: p.description,
         address: p.address,
+        logoUrl: p.logo_url,
+        coverUrl: p.cover_url,
         // Pegar o primeiro benefício ativo como "Main Benefit"
         mainBenefit: p.benefits?.[0]?.title || 'Ver Ofertas'
     })) || []
@@ -104,6 +108,7 @@ export async function searchMarketplace(
         .from('partners')
         .select(`
             id, name, description, address, logo_url,
+            cover_url,
             academy_partners!inner(status),
             benefits(title),
             ${categoryJoin}(
@@ -149,6 +154,7 @@ export async function searchMarketplace(
         description: p.description,
         address: p.address,
         logoUrl: p.logo_url,
+        coverUrl: p.cover_url,
         mainBenefit: p.benefits?.[0]?.title || 'Ver Ofertas',
         // Extract tags for display
         tags: p.partner_tags_link.map((link: any) => link.partner_tags.name)
@@ -182,38 +188,44 @@ export async function getPartnerProfile(academySlug: string, partnerId: string) 
         .from('partners')
         .select(`
             *,
-            academy_partners!inner(status, academy_id),
-            academies:academy_partners(
-                slug
+            academy_partners!inner(
+                status, 
+                academy_id,
+                academies (
+                    slug
+                )
             ),
             benefits(id, title, description, rules, validity_end, status)
         `)
         .eq('id', partnerId)
         .eq('academy_partners.status', 'ACTIVE')
-        .single() // We will filter slug in JS or let the JOIN filtering happen if we could, but Supabase nested filtering is tricky on inner joins sometimes. 
-    // Actually, let's filter slug via the nested relation if possible, or verify after.
-    // Simpler to verify slug matches the relation.
+        .single()
 
     if (error || !data) {
         console.error('Error fetching partner profile:', error)
         return null
     }
 
+    console.log('[DEBUG PROFILE] PartnerID:', partnerId, 'AcademySlug:', academySlug)
+    // console.log('[DEBUG PROFILE] Data:', JSON.stringify(data, null, 2))
+
     // Verify Academy Slug (Security/Integrity check)
-    // data.academies is an array because academy_partners -> academies is N:1 defined but returns array in supabase usually or object depending on relation code.
-    // Wait, join is: partners -> academy_partners -> academies.
-    // academy_partners has academy_id.
-    // Let's optimize: We just need to know if this partner is linked to an academy with this slug.
+    // Now data.academy_partners is an array of join table records, each with a nested academy
+    const linkedPartnerships = data.academy_partners || []
+    console.log('[DEBUG PROFILE] Linked:', JSON.stringify(linkedPartnerships, null, 2))
 
-    // Better query approach to filter by slug in DB:
-    // .eq('academy_partners.academies.slug', academySlug) -> Requires setting up filters on nested resources which PostgREST supports.
-
-    // Let's stick to the robust check:
-    const linkedAcademies = Array.isArray(data.academies) ? data.academies : [data.academies]
-    const hasMatchingSlug = linkedAcademies.some((a: any) => a.slug === academySlug)
+    const hasMatchingSlug = linkedPartnerships.some((ap: any) => ap.academies?.slug === academySlug)
 
     if (!hasMatchingSlug) {
-        return null // Partner exists but not linked to this academy slug
+        // Fallback: If partner exists but slug is wrong, Redirect to the correct one (User Friendly)
+        const validLink = linkedPartnerships.find((ap: any) => ap.academies?.slug)
+        if (validLink) {
+            const correctSlug = validLink.academies.slug
+            console.log(`[PROFILE REDIRECT] ${academySlug} -> ${correctSlug}`)
+            redirect(`/student/${correctSlug}/partner/${partnerId}`)
+        }
+
+        return null // Partner found but not linked to ANY academy (Should be weird)
     }
 
     // Filter active benefits
@@ -294,6 +306,8 @@ export async function getPromotionsFeed(academySlug: string, categorySlug?: stri
             configuration,
             description,
             validity_end,
+            main_image_url,
+            cover_image_url,
             partner_id,
             partners!inner (
                 id,
@@ -336,6 +350,8 @@ export async function getPromotionsFeed(academySlug: string, categorySlug?: stri
         title: b.title,
         description: b.description,
         type: b.type || 'STANDARD',
+        main_image_url: b.main_image_url,
+        cover_image_url: b.cover_image_url,
         discountValue: b.configuration?.discount_value || null,
         partner: {
             id: b.partners.id,

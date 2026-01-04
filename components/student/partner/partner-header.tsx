@@ -4,13 +4,14 @@ import { ChevronLeft } from 'lucide-react'
 interface PartnerHeaderProps {
     name: string
     logoUrl?: string
+    coverUrl?: string | null
     galleryUrls?: string[]
     academySlug: string
 }
 
-export function PartnerHeader({ name, logoUrl, galleryUrls, academySlug }: PartnerHeaderProps) {
-    // Use first image from gallery as cover, or a gradient fallback
-    const coverImage = galleryUrls && galleryUrls.length > 0 ? galleryUrls[0] : null
+export function PartnerHeader({ name, logoUrl, coverUrl, galleryUrls, academySlug }: PartnerHeaderProps) {
+    // Use coverUrl, or first image from gallery, or null
+    const coverImage = coverUrl || (galleryUrls && galleryUrls.length > 0 ? galleryUrls[0] : null)
 
     return (
         <div className="relative h-64 w-full bg-slate-200">

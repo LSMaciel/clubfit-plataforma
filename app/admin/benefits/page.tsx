@@ -1,8 +1,14 @@
+
 import { createClient } from '@/utils/supabase/server'
 import Link from 'next/link'
 import { toggleBenefitStatus } from './actions'
 
-export default async function BenefitsListPage() {
+
+export default async function BenefitsListPage({
+  searchParams
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -15,9 +21,9 @@ export default async function BenefitsListPage() {
     .eq('owner_id', user.id)
     .single()
 
-  // Se for Admin acessando, pode não ter partner vinculado diretamente, 
-  // mas para esta Story assumimos o fluxo do Parceiro.
-  // Se não tiver partner, array vazio.
+  const resolvedParams = await searchParams
+  const currentTab = resolvedParams?.tab === 'inactive' ? 'INACTIVE' : 'ACTIVE'
+
   let benefits = []
 
   if (partner) {
@@ -25,6 +31,7 @@ export default async function BenefitsListPage() {
       .from('benefits')
       .select('*')
       .eq('partner_id', partner.id)
+      .eq('status', currentTab) // Filter by status/tab
       .order('created_at', { ascending: false })
     benefits = data || []
   }
@@ -46,7 +53,7 @@ export default async function BenefitsListPage() {
       <main className="p-8 max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-slate-800">Promoções Ativas</h1>
+            <h1 className="text-2xl font-bold text-slate-800">Promoções</h1>
             <p className="text-sm text-slate-500">
               Gerenciando ofertas de: <span className="font-medium text-slate-900">{partner?.name || '...'}</span>
             </p>
@@ -56,6 +63,22 @@ export default async function BenefitsListPage() {
             className="bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700 shadow-sm"
           >
             + Criar Promoção
+          </Link>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex gap-1 border-b border-slate-200 mb-8">
+          <Link
+            href="/admin/benefits?tab=active"
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${currentTab === 'ACTIVE' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+          >
+            Ativas
+          </Link>
+          <Link
+            href="/admin/benefits?tab=inactive"
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${currentTab === 'INACTIVE' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+          >
+            Inativas
           </Link>
         </div>
 
@@ -72,11 +95,12 @@ export default async function BenefitsListPage() {
                     <span className={`px-2 py-1 rounded text-xs font-bold ${benefit.status === 'ACTIVE' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
                       {benefit.status === 'ACTIVE' ? 'ATIVA' : 'INATIVA'}
                     </span>
-                    {benefit.validity_end && (
-                      <span className="text-xs text-slate-400">
-                        Vence: {new Date(benefit.validity_end).toLocaleDateString()}
-                      </span>
-                    )}
+                    <Link
+                      href={`/admin/benefits/${benefit.id}/edit`}
+                      className="text-xs font-medium text-slate-500 hover:text-indigo-600 underline"
+                    >
+                      Editar
+                    </Link>
                   </div>
                   <h3 className="text-lg font-bold text-slate-900 mb-2">{benefit.title}</h3>
                   <p className="text-sm text-slate-600 mb-4 line-clamp-3 whitespace-pre-line">
@@ -95,25 +119,22 @@ export default async function BenefitsListPage() {
                   </form>
 
                   <div className="text-xs text-slate-400">
-                    👀 Visível no app
+                    {benefit.status === 'ACTIVE' ? '👀 Visível' : '🚫 Oculto'}
                   </div>
                 </div>
               </div>
             ))}
 
-            {benefits.length === 0 && (
-              <div className="col-span-full py-12 text-center bg-white rounded-xl border border-dashed border-slate-300">
-                <div className="text-4xl mb-4">🏷️</div>
-                <h3 className="text-lg font-medium text-slate-900">Nenhuma promoção criada</h3>
-                <p className="text-slate-500 mb-6">Crie sua primeira oferta para atrair os alunos da academia.</p>
-                <Link
-                  href="/admin/benefits/new"
-                  className="text-indigo-600 font-medium hover:underline"
-                >
-                  Criar agora &rarr;
-                </Link>
-              </div>
-            )}
+            {
+              benefits.length === 0 && (
+                <div className="col-span-full py-12 text-center bg-white rounded-xl border border-dashed border-slate-300">
+                  <div className="text-4xl mb-4">🏷️</div>
+                  <h3 className="text-lg font-medium text-slate-900">
+                    {currentTab === 'ACTIVE' ? 'Nenhuma promoção ativa.' : 'Nenhuma promoção inativa.'}
+                  </h3>
+                </div>
+              )
+            }
           </div>
         )}
       </main>

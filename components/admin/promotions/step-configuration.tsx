@@ -28,6 +28,7 @@ export function StepConfiguration({ type, initialData, onHtmlSubmit, onCancel }:
         defaultValues: {
             title: initialData.title || '',
             description: initialData.description || '',
+            main_image_url: initialData.main_image_url || '',
             cover_image_url: initialData.cover_image_url || '',
             min_spend: initialData.constraints?.min_spend || '',
             channel: initialData.constraints?.channel || 'BOTH',
@@ -35,7 +36,9 @@ export function StepConfiguration({ type, initialData, onHtmlSubmit, onCancel }:
         }
     })
 
+    const mainImage = watch('main_image_url')
     const coverImage = watch('cover_image_url')
+
     // Safe casting for dynamic union paths
     const configValue = Number(watch('config.value' as any) || 0)
     const originalPrice = Number(watch('config.original_price' as any) || 0)
@@ -56,6 +59,7 @@ export function StepConfiguration({ type, initialData, onHtmlSubmit, onCancel }:
         const formattedData = {
             title: data.title,
             description: data.description,
+            main_image_url: data.main_image_url,
             cover_image_url: data.cover_image_url,
             configuration: data.config,
             constraints: {
@@ -179,13 +183,29 @@ export function StepConfiguration({ type, initialData, onHtmlSubmit, onCancel }:
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-8 animate-in slide-in-from-right-8 duration-500">
 
             <div className="space-y-4">
-                <input type="hidden" {...register('cover_image_url')} />
-                <ImageUploader
-                    value={coverImage}
-                    onChange={(url) => setValue('cover_image_url', url)}
-                />
+                <h2 className="text-xl font-bold text-slate-900">Imagens</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <input type="hidden" {...register('main_image_url')} />
+                        <ImageUploader
+                            label="Imagem Principal (Lista)"
+                            value={mainImage}
+                            onChange={(url) => setValue('main_image_url', url)}
+                        />
+                        <p className="text-xs text-slate-500 mt-1">Exibida na listagem de promoções.</p>
+                    </div>
+                    <div>
+                        <input type="hidden" {...register('cover_image_url')} />
+                        <ImageUploader
+                            label="Imagem de Capa (Detalhe)"
+                            value={coverImage}
+                            onChange={(url) => setValue('cover_image_url', url)}
+                        />
+                        <p className="text-xs text-slate-500 mt-1">Exibida dentro da promoção.</p>
+                    </div>
+                </div>
 
-                <h2 className="text-xl font-bold text-slate-900">Configuração da Oferta</h2>
+                <h2 className="text-xl font-bold text-slate-900 pt-4">Configuração da Oferta</h2>
 
                 <div className="grid grid-cols-1 gap-4">
                     <div>

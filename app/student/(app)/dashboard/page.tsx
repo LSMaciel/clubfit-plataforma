@@ -18,16 +18,26 @@ export default async function StudentHomePage({
 
     // Get basic student info for "Welcome"
     const supabaseAdmin = createAdminClient()
-    const { data: student } = await supabaseAdmin
-        .from('students')
-        .select('full_name, academy_id, academies(slug)')
-        .eq('id', session.studentId)
-        .single()
 
+    // Parallel Fetching: Student Info + Academy Slug (Reliable)
+    const [studentResponse, academyResponse] = await Promise.all([
+        supabaseAdmin
+            .from('students')
+            .select('full_name')
+            .eq('id', session.studentId)
+            .single(),
+        supabaseAdmin
+            .from('academies')
+            .select('slug')
+            .eq('id', session.academyId)
+            .single()
+    ])
+
+    const student = studentResponse.data
     const firstName = student?.full_name.split(' ')[0] || 'Aluno'
-    const academySlug = Array.isArray(student?.academies)
-        ? student?.academies[0]?.slug
-        : (student?.academies as any)?.slug || 'clubfit'
+
+    // Fallback is robust now, but primarily uses the Session Academy ID
+    const academySlug = academyResponse.data?.slug || 'clubfit'
 
     // 2. Fetch Data (Optimized for STORY-005 + STORY-007)
     const categorySlug = resolvedParams.category
