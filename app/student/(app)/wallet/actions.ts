@@ -88,6 +88,6 @@ export async function generateBenefitVoucher(benefitId: string) {
         success: true,
         token,
         expiresAt,
-        partnerName: benefit.partners?.name
+        partnerName: Array.isArray(benefit.partners) ? benefit.partners[0]?.name : (benefit.partners as any)?.name
     }
 }
