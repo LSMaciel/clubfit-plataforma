@@ -36,7 +36,7 @@ export async function createAcademy(prevState: any, formData: FormData) {
   // Dados do Dono
   const ownerName = formData.get('owner_name') as string
   const ownerEmail = formData.get('owner_email') as string
-  const ownerPassword = formData.get('owner_password') as string
+  // Password removed in favor of Invite Flow
 
   // Novos Campos de Endereço V2
   const zipCode = formData.get('zip_code') as string
@@ -64,10 +64,10 @@ export async function createAcademy(prevState: any, formData: FormData) {
     return { error: 'O Slug deve conter apenas letras minúsculas, números e hífens.' }
   }
 
-  // Se preencheu algum campo de login, obriga a preencher todos
-  const hasCredentialInputs = ownerEmail || ownerPassword || ownerName
-  if (hasCredentialInputs && (!ownerEmail || !ownerPassword || !ownerName)) {
-    return { error: 'Para criar um usuário, preencha Nome, Email e Senha.' }
+  // Se preencheu algum campo de login, obriga a preencher todos (exceto senha agora)
+  const hasCredentialInputs = ownerEmail || ownerName
+  if (hasCredentialInputs && (!ownerEmail || !ownerName)) {
+    return { error: 'Para criar um usuário, preencha Nome e Email.' }
   }
 
   let logoUrl = null
@@ -103,17 +103,15 @@ export async function createAcademy(prevState: any, formData: FormData) {
 
   let newUserId = null
 
-  // 4. Criar Usuário Auth (Se fornecido)
+  // 4. Convidar Usuário Auth (Se fornecido)
   if (hasCredentialInputs) {
-    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-      email: ownerEmail,
-      password: ownerPassword,
-      email_confirm: true,
-      user_metadata: { full_name: ownerName }
+    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.inviteUserByEmail(ownerEmail, {
+      data: { full_name: ownerName },
+      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/confirm`
     })
 
     if (authError) {
-      return { error: `Erro ao criar login: ${authError.message}` }
+      return { error: `Erro ao enviar convite: ${authError.message}` }
     }
     newUserId = authData.user.id
   }

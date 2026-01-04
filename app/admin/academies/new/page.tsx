@@ -84,14 +84,13 @@ export default function NewAcademyPage() {
                                         placeholder="admin@academia.com"
                                         required
                                     />
-                                    <FormInput
-                                        label="Senha Inicial"
-                                        name="owner_password"
-                                        type="text"
-                                        placeholder="Mínimo 6 caracteres"
-                                        minLength={6}
-                                        required
-                                    />
+                                    <div className="col-span-1 md:col-span-2 bg-blue-50 text-blue-800 p-4 rounded-md text-sm border border-blue-100 flex items-start gap-2">
+                                        <span>📧</span>
+                                        <p>
+                                            Um convite será enviado para este e-mail.
+                                            O responsável receberá um link para definir a senha e acessar o sistema.
+                                        </p>
+                                    </div>
                                 </div>
                             ) : (
                                 <p className="text-sm text-slate-500 bg-gray-50 p-4 rounded-md border border-gray-100">

@@ -239,17 +239,9 @@ export default function NewPartnerPage() {
                                             placeholder="admin@pizzaria.com"
                                             required={!selectedPartner}
                                         />
-                                        <FormInput
-                                            label="Senha Inicial"
-                                            name="owner_password"
-                                            type="text"
-                                            placeholder="Mínimo 6 caracteres"
-                                            required={!selectedPartner}
-                                            minLength={6}
-                                        />
                                     </div>
-                                    <p className="mt-2 text-xs text-slate-500 bg-slate-50 p-2 rounded text-center border border-slate-100">
-                                        ℹ️ O parceiro usará este e-mail e senha para acessar o painel dele.
+                                    <p className="mt-2 text-xs text-blue-600 bg-blue-50 p-3 rounded text-center border border-blue-100 flex items-center justify-center gap-2">
+                                        📧 Um convite será enviado para este e-mail com instruções para definir a senha.
                                     </p>
                                 </div>
                             </>

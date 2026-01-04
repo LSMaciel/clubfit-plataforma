@@ -71,9 +71,10 @@ export default function NewGlobalPartnerPage() {
                             <FormInput label="Nome do Responsável" name="owner_name" required />
                             <div className="md:hidden"></div>
                             <FormInput label="E-mail de Login" name="owner_email" type="email" required />
-                            <FormInput label="Senha Inicial" name="owner_password" type="text" required minLength={6} />
                         </div>
-                        <p className="mt-2 text-xs text-slate-500">Este usuário será criado com a role PARTNER e será dono deste registro.</p>
+                        <p className="mt-2 text-xs text-blue-600 bg-blue-50 p-3 rounded text-center border border-blue-100">
+                            📧 O responsável receberá um convite por e-mail para definir sua senha.
+                        </p>
                     </div>
 
                     <div className="pt-4 border-t border-slate-100 flex justify-end gap-3">

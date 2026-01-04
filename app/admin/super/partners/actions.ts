@@ -102,9 +102,9 @@ export async function createGlobalPartnerSuper(prevState: any, formData: FormDat
     // Owner
     const ownerName = formData.get('owner_name') as string
     const ownerEmail = formData.get('owner_email') as string
-    const ownerPassword = formData.get('owner_password') as string
+    // Password removed
 
-    if (!name || !cnpj || !ownerEmail || !ownerPassword) {
+    if (!name || !cnpj || !ownerEmail) {
         return { error: 'Dados obrigatórios faltando.' }
     }
 
@@ -119,12 +119,10 @@ export async function createGlobalPartnerSuper(prevState: any, formData: FormDat
         return { error: 'CNPJ já cadastrado no sistema.' }
     }
 
-    // 4. Criar Usuário Owner
-    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-        email: ownerEmail,
-        password: ownerPassword,
-        email_confirm: true,
-        user_metadata: { full_name: ownerName }
+    // 4. Criar Usuário Owner via Convite
+    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.inviteUserByEmail(ownerEmail, {
+        data: { full_name: ownerName },
+        redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/confirm`
     })
 
     if (authError) return { error: `Erro Auth: ${authError.message}` }
