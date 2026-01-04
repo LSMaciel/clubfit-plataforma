@@ -11,11 +11,10 @@ import { EconomyChart } from '@/components/admin/economy-chart'
 import { PartnersRankingTable } from '@/components/admin/partners-ranking-table'
 import { Activity, CreditCard, DollarSign, TrendingUp, Users } from 'lucide-react'
 
-export default async function DashboardPage({
-    searchParams
-}: {
-    searchParams?: { [key: string]: string | string[] | undefined }
+export default async function DashboardPage(props: {
+    searchParams?: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
+    const searchParams = await props.searchParams
     const supabase = await createClient()
     // ... existing auth ...
     const { data: { user } } = await supabase.auth.getUser()
