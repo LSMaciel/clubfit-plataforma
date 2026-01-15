@@ -13,8 +13,20 @@ const nextConfig = {
                 protocol: 'https',
                 hostname: 'images.unsplash.com',
             },
+            {
+                protocol: 'https',
+                hostname: '**.supabase.co',
+            },
         ],
     },
 };
 
-export default withPWA(nextConfig);
+import withBundleAnalyzer from '@next/bundle-analyzer';
+
+const withAnalyzer = withBundleAnalyzer({
+    enabled: process.env.ANALYZE === 'true',
+});
+
+// ... existing code ...
+
+export default withAnalyzer(withPWA(nextConfig));

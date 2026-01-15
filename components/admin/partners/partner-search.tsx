@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { searchGlobalPartners, linkPartner, unlinkPartner } from '@/app/admin/partners/actions'
+import { searchGlobalPartners, linkPartner, unlinkPartner } from '@/app/admin/(authenticated)/partners/actions'
 import Link from 'next/link'
 
 // Quick debounce implementation since hook doesn't exist

@@ -29,7 +29,19 @@ erDiagram
     
     benefits ||--o{ student_access_tokens : "gera"
     benefits ||--o{ benefit_usages : "registro de uso"
+    benefits ||--o{ student_access_tokens : "gera"
+    benefits ||--o{ benefit_usages : "registro de uso"
 ```
+
+## 2.1. Índices de Performance (STORY-PERF-00-02)
+Além das chaves primárias e estrangeiras, os seguintes índices foram criados para otimizar Policies e RLS:
+
+1.  **`idx_academy_partners_link`**: `(academy_id, partner_id)` em `academy_partners`.
+    *   *Uso:* Acelera subqueries em policies que verificam vínculos N:N.
+2.  **`idx_users_academy_role`**: `(academy_id, role)` em `users`.
+    *   *Uso:* Acelera verificação de permissões do usuário logado.
+3.  **`idx_benefits_partner`**: `(partner_id, status)` em `benefits`.
+    *   *Uso:* Acelera listagem e filtro de benefícios ativos.
 
 ---
 

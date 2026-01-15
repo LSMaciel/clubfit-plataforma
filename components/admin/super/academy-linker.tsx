@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { linkAcademySuper, unlinkAcademySuper } from '@/app/admin/super/partners/actions'
+import { linkAcademySuper, unlinkAcademySuper } from '@/app/admin/(authenticated)/super/partners/actions'
 
 interface Academy {
     id: string

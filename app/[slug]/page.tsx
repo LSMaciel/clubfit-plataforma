@@ -1,6 +1,8 @@
 import { createClient } from '@/utils/supabase/server'
-import { notFound, redirect } from 'next/navigation'
+import { notFound } from 'next/navigation'
 import { StudentLoginForm as LoginForm } from '@/components/student/login-form'
+import { Suspense } from 'react'
+import { LoginRedirector } from '@/components/student/login-redirector'
 
 interface PageProps {
   params: Promise<{ slug: string }>
@@ -10,18 +12,12 @@ export default async function AcademyLoginPage({ params }: PageProps) {
   const resolvedParams = await params
   const supabase = await createClient()
 
-  // 1. Verificar se usuário já está logado
-  const { data: { user } } = await supabase.auth.getUser()
-  if (user) {
-    // Se for Aluno, manda para os benefícios
-    const { data: profile } = await supabase.from('users').select('role').eq('id', user.id).single()
-    if (profile?.role === 'STUDENT') {
-      redirect(`/${resolvedParams.slug}/benefits`)
-    }
-    // Se for Admin, ignora e deixa ver a tela (ou poderia mandar pro dashboard)
-  }
+  // 1. OTIMIZAÇÃO DE PERFORMANCE (STORY-PERF-01-02)
+  // Removemos o blocking auth check daqui. Ele agora acontece em background
+  // dentro do component <LoginRedirector />.
 
   // 2. Buscar Dados da Academia (Leitura Pública)
+  // Esta é a única query bloqueante agora, mas ela é geralmente rápida (PK lookup)
   const { data: academy } = await supabase
     .from('academies')
     .select('id, name, logo_url, primary_color')
@@ -31,9 +27,6 @@ export default async function AcademyLoginPage({ params }: PageProps) {
   if (!academy) {
     notFound() // Retorna 404 se slug não existe
   }
-
-  // Cor de fundo levemente tintada com a cor da marca (opacidade bem baixa)
-  // Como não podemos calcular hex com alpha fácil no server sem lib, usaremos slate-900 padrão com overlay
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 relative overflow-hidden bg-slate-900">
@@ -71,11 +64,22 @@ export default async function AcademyLoginPage({ params }: PageProps) {
         </div>
 
         {/* Formulário de Login */}
-        <LoginForm
-          slug={resolvedParams.slug}
-          academyName={academy.name}
-          primaryColor={academy.primary_color || '#000000'}
-        />
+        <div className="w-full relative">
+          {/* 
+               Suspense Boundary:
+               Aqui acontece a mágica. O render continua (mostra o form)
+               enquanto o LoginRedirector verifica a sessão em paralelo.
+            */}
+          <Suspense fallback={null}>
+            <LoginRedirector slug={resolvedParams.slug} />
+          </Suspense>
+
+          <LoginForm
+            slug={resolvedParams.slug}
+            academyName={academy.name}
+            primaryColor={academy.primary_color || '#000000'}
+          />
+        </div>
 
         <div className="mt-12 text-center opacity-40">
           <p className="text-xs text-white">Powered by <strong>ClubFit</strong></p>

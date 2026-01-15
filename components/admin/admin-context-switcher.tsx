@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { switchAdminContext } from '@/app/admin/academies/actions'
+import { switchAdminContext } from '@/app/admin/(authenticated)/academies/actions'
 import { useState, useTransition } from 'react'
 
 interface Academy {

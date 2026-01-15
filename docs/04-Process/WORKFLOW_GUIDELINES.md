@@ -15,6 +15,9 @@ Este arquivo contém as **Regras de Ouro** que regem o desenvolvimento do projet
 5.  **Pesquisa Obrigatória:** Sempre verificar a estrutura existente e o banco de dados antes de propor soluções.
 6.  **Análise Prévia:** Antes de desenvolver, analisar o impacto da mudança no sistema como um todo.
 7.  **Micro-Contexto:** Nunca misturar contextos. Mantenha o código modular e isolado.
+8.  **Responsabilidade Única Extrema (SRP):** Cada arquivo deve ter uma única funcionalidade.
+    *   **Limite Rígido:** Máximo de **250 linhas** por arquivo.
+    *   **Ação:** Se um arquivo passar disso, ele DEVE ser refatorado imediatamente em sub-componentes ou hooks.
 
 ---
 

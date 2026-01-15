@@ -5,7 +5,7 @@ import { PromotionDraft, PromotionType } from './types'
 import { StepTypeSelector } from './step-type-selector'
 import { StepConfiguration } from './step-configuration'
 import { StepPreview } from './step-preview'
-import { createBenefit, updateBenefit } from '@/app/admin/benefits/actions'
+import { createBenefit, updateBenefit } from '@/app/admin/(authenticated)/benefits/actions'
 import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
 

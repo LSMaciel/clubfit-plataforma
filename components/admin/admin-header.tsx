@@ -1,26 +1,21 @@
 import Link from 'next/link'
 import { createClient } from '@/utils/supabase/server'
 import { signOut } from '@/app/auth/actions'
-import { cookies } from 'next/headers'
+import { getCachedAdminProfile } from '@/utils/supabase/cached-queries'
 import { AdminContextSwitcher } from './admin-context-switcher'
 import { AdminNav } from './admin-nav'
 
 export async function AdminHeader() {
+    const profile = await getCachedAdminProfile()
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
 
-    // Get full profile
-    const { data: profile } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', user?.id)
-        .single()
+    if (!profile) return null
 
-    const isSuperAdmin = profile?.role === 'SUPER_ADMIN'
+    const isSuperAdmin = profile.role === 'SUPER_ADMIN'
+    const currentContextId = profile.effective_academy_id !== profile.academy_id ? profile.effective_academy_id : null
 
     // Logic for Context Switcher (Super Admin only)
     let academies: any[] = []
-    let currentContextId: string | null = null
 
     if (isSuperAdmin) {
         const { data: allAcademies } = await supabase
@@ -29,9 +24,6 @@ export async function AdminHeader() {
             .order('name')
 
         academies = allAcademies || []
-
-        const cookieStore = await cookies()
-        currentContextId = cookieStore.get('admin-context-academy-id')?.value || null
     }
 
     // Determine Display Title based on Context
@@ -67,8 +59,8 @@ export async function AdminHeader() {
 
                 <div className="flex items-center gap-4">
                     <div className="text-sm text-right hidden sm:block">
-                        <p className="font-medium">{profile?.name || user?.email}</p>
-                        <p className="text-xs text-slate-500 uppercase">{profile?.role?.replace('_', ' ')}</p>
+                        <p className="font-medium">{profile.name}</p>
+                        <p className="text-xs text-slate-500 uppercase">{profile.role?.replace('_', ' ')}</p>
                     </div>
                     <form action={signOut}>
                         <button className="text-xs text-red-600 hover:text-red-800 font-medium px-2 py-1 border border-transparent hover:border-red-100 rounded-md transition-colors uppercase tracking-wider">
@@ -81,8 +73,8 @@ export async function AdminHeader() {
             {/* Navigation Bar */}
             <div className="px-8 flex">
                 <AdminNav
-                    role={profile?.role}
-                    isGlobalContext={isSuperAdmin && !currentContextId}
+                    role={profile.role}
+                    isGlobalContext={profile.is_global_context}
                 />
             </div>
         </header>

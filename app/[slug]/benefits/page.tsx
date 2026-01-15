@@ -36,64 +36,34 @@ export default async function BenefitsPage({ params, searchParams }: PageProps) 
     }
   }
 
-  // 2. Buscar Benefícios Ativos + Parceiro
-  // FIX: Benefits don't have academy_id directly. We must ensure the partner is linked.
+  // 2. Buscar Benefícios Otimizado (Query Única)
+  // Fazemos um JOIN com 'partners' e um INNER JOIN com 'academy_partners'
+  // Isso garante que só pegamos benefícios de parceiros VINCULADOS a esta academia
+  // e elimina a necessidade de buscar os IDs separadamente (Waterfall).
 
-  let validPartnerIds: string[] = []
-
-  if (partnerId) {
-    // 2a. Single Partner Mode: Verify Link
-    const { data: link } = await supabase
-      .from('academy_partners')
-      .select('partner_id')
-      .eq('academy_id', academy.id)
-      .eq('partner_id', partnerId)
-      .eq('status', 'ACTIVE')
-      .single()
-
-    if (link) validPartnerIds = [partnerId]
-  } else {
-    // 2b. All Partners Mode: Get all linked
-    const { data: links } = await supabase
-      .from('academy_partners')
-      .select('partner_id')
-      .eq('academy_id', academy.id)
-      .eq('status', 'ACTIVE')
-
-    if (links) validPartnerIds = links.map(l => l.partner_id)
-  }
-
-  // If no valid partners (either not linked or none exist), return empty
-  if (validPartnerIds.length === 0) {
-    return (
-      <div className="space-y-6">
-        {/* Reset Header */}
-        <Link
-          href="/student/partners"
-          className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-800 transition-colors"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
-          </svg>
-          Voltar para Parceiros
-        </Link>
-        <div className="text-center py-12">Nenhuma oferta disponível no momento.</div>
-      </div>
-    )
-  }
-
-  const { data: benefits } = await supabase
+  let query = supabase
     .from('benefits')
     .select(`
         *,
-        partners (
+        partners!inner (
             name,
-            address
+            address,
+            academy_partners!inner (
+                academy_id,
+                status
+            )
         )
     `)
-    .in('partner_id', validPartnerIds)
-    .eq('status', 'ACTIVE')
-    .order('created_at', { ascending: false })
+    .eq('status', 'ACTIVE') // Benefício Ativo
+    .eq('partners.academy_partners.academy_id', academy.id) // Vinculado a essa academia
+    .eq('partners.academy_partners.status', 'ACTIVE') // Vínculo Ativo
+
+  // Se tiver filtro de parceiro específico, adiciona
+  if (partnerId) {
+    query = query.eq('partner_id', partnerId)
+  }
+
+  const { data: benefits } = await query.order('created_at', { ascending: false })
 
   // ... existing imports
 

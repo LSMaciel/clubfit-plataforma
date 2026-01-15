@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 import { generateToken } from '@/app/[slug]/benefits/generate-action'
 import { VoucherModal } from './voucher-modal'
+import Image from 'next/image'
 import { getBenefitBadge, calculateFinalPrice, formatCurrency } from './utils/promotion-visuals'
 
 interface BenefitCardProps {
@@ -87,10 +88,12 @@ export function BenefitCard(props: BenefitCardProps) {
                 {/* Cover Image & Badge */}
                 <div className="relative h-36 bg-slate-200 overflow-hidden">
                     {displayImage ? (
-                        <img
+                        <Image
                             src={displayImage}
                             alt={title}
-                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            fill
+                            className="object-cover transition-transform duration-500 group-hover:scale-105"
+                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                         />
                     ) : (
                         <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 bg-slate-50">

@@ -10,17 +10,35 @@ interface AddressData {
     state: string
 }
 
-export function AddressForm() {
+export interface AddressFormProps {
+    initialData?: {
+        zipCode?: string
+        street?: string
+        number?: string
+        neighborhood?: string
+        city?: string
+        state?: string
+        complement?: string
+        latitude?: number | null
+        longitude?: number | null
+    }
+}
+
+export function AddressForm({ initialData }: AddressFormProps) {
     const [loading, setLoading] = useState(false)
     const [addressData, setAddressData] = useState<AddressData>({
-        street: '',
-        neighborhood: '',
-        city: '',
-        state: ''
+        street: initialData?.street || '',
+        neighborhood: initialData?.neighborhood || '',
+        city: initialData?.city || '',
+        state: initialData?.state || ''
     })
 
-    const [zipCode, setZipCode] = useState('')
-    const [coordinates, setCoordinates] = useState<{ lat: string, lng: string } | null>(null)
+    const [zipCode, setZipCode] = useState(initialData?.zipCode || '')
+    const [coordinates, setCoordinates] = useState<{ lat: string, lng: string } | null>(
+        initialData?.latitude && initialData?.longitude
+            ? { lat: initialData.latitude.toString(), lng: initialData.longitude.toString() }
+            : null
+    )
 
     const numberInputRef = useRef<HTMLInputElement>(null)
 
@@ -165,6 +183,7 @@ export function AddressForm() {
                         label="Número"
                         name="number"
                         placeholder="123"
+                        defaultValue={initialData?.number}
                     />
                 </div>
             </div>
@@ -181,6 +200,7 @@ export function AddressForm() {
                     label="Complemento"
                     name="complement"
                     placeholder="Ex: Apto 101"
+                    defaultValue={initialData?.complement}
                 />
             </div>
         </div>
