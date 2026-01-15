@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { getAcademyAdmins, generateMagicLink } from '@/app/admin/super/actions'
+import { getAcademyAdmins, generateMagicLink } from '@/app/admin/(authenticated)/super/actions'
 
 interface MagicLinkModalProps {
     academyId: string
