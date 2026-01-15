@@ -1,10 +1,5 @@
 import { getAdminDashboardData, getAcademyPartnersRanking } from '@/app/admin/(authenticated)/dashboard/actions'
-import dynamic from 'next/dynamic'
-
-const EconomyChart = dynamic(() => import('@/components/admin/economy-chart').then(mod => mod.EconomyChart), {
-    loading: () => <div className="h-[350px] w-full bg-slate-50 rounded-xl animate-pulse" />,
-    ssr: false
-})
+import { LazyEconomyChart } from '@/components/admin/dashboard/lazy-economy-chart'
 import { PartnersRankingTable } from '@/components/admin/partners-ranking-table'
 
 export async function ChartsSection({ academyId }: { academyId: string }) {
@@ -17,7 +12,7 @@ export async function ChartsSection({ academyId }: { academyId: string }) {
     return (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
-                <EconomyChart data={kpiData?.daily_series || []} />
+                <LazyEconomyChart data={kpiData?.daily_series || []} />
                 <PartnersRankingTable data={rankingData} />
             </div>
             {/* Right Col */}
