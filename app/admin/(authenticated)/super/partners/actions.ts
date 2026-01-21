@@ -165,6 +165,107 @@ export async function createGlobalPartnerSuper(prevState: any, formData: FormDat
 }
 
 /**
+ * Super Admin: Atualizar parceiro global.
+ */
+export async function updateGlobalPartner(prevState: any, formData: FormData) {
+    const supabase = await createClient()
+    const supabaseAdmin = createAdminClient()
+
+    // 1. Auth Check (Super Admin)
+    const { data: { user: currentUser } } = await supabase.auth.getUser()
+    if (!currentUser) return { error: 'Não autenticado.' }
+
+    const { data: profile } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', currentUser.id)
+        .single()
+
+    if (profile?.role !== 'SUPER_ADMIN') {
+        return { error: 'Acesso negado.' }
+    }
+
+    // 2. Extrair Dados
+    const id = formData.get('id') as string
+    const name = formData.get('name') as string
+    const cnpj = formData.get('cnpj') as string
+    const description = formData.get('description') as string
+
+    // Endereço
+    const street = formData.get('street') as string
+    const number = formData.get('number') as string
+    const neighborhood = formData.get('neighborhood') as string
+    const city = formData.get('city') as string
+    const state = formData.get('state') as string
+    const zipCode = formData.get('zip_code') as string
+
+    // Novos Campos (Profile Enrichment)
+    const logo_url = formData.get('logo_url') as string
+    const cover_url = formData.get('cover_url') as string
+    const whatsapp = formData.get('whatsapp') as string
+    const instagram = formData.get('instagram') as string
+    const website = formData.get('website') as string
+
+    // Multi-selects
+    const categoryIds = formData.getAll('categories') as string[]
+    const tagIds = formData.getAll('tags') as string[]
+
+    // Owner (Apenas nome por enquanto para não quebrar auth link)
+    // const ownerName = formData.get('owner_name') as string
+
+    if (!id || !name || !cnpj) {
+        return { error: 'Dados obrigatórios faltando.' }
+    }
+
+    // 3. Atualizar Parceiro
+    const { error: partnerError } = await supabaseAdmin
+        .from('partners')
+        .update({
+            name,
+            cnpj,
+            description,
+            street,
+            number,
+            neighborhood,
+            city,
+            state,
+            zip_code: zipCode,
+            address: `${street}, ${number} - ${city}/${state}`,
+            // New Fields
+            logo_url,
+            cover_url,
+            whatsapp,
+            instagram,
+            website,
+            updated_at: new Date().toISOString()
+        })
+        .eq('id', id)
+
+    if (partnerError) {
+        console.error(partnerError)
+        return { error: 'Erro ao atualizar parceiro.' }
+    }
+
+    // 4. Update Categories (Full Replace)
+    await supabaseAdmin.from('partner_categories').delete().eq('partner_id', id)
+    if (categoryIds.length > 0) {
+        const catInserts = categoryIds.map(cid => ({ partner_id: id, category_id: cid }))
+        await supabaseAdmin.from('partner_categories').insert(catInserts)
+    }
+
+    // 5. Update Tags (Full Replace)
+    await supabaseAdmin.from('partner_tags_link').delete().eq('partner_id', id)
+    if (tagIds.length > 0) {
+        const tagInserts = tagIds.map(tid => ({ partner_id: id, tag_id: tid }))
+        await supabaseAdmin.from('partner_tags_link').insert(tagInserts)
+    }
+
+    revalidatePath(`/admin/super/partners/${id}`)
+    revalidatePath('/admin/super/partners')
+    redirect(`/admin/super/partners/${id}`)
+}
+
+/**
  * Super Admin: Buscar detalhes de um parceiro e seus vínculos.
  */
 export async function getPartnerDetails(partnerId: string) {
@@ -175,7 +276,9 @@ export async function getPartnerDetails(partnerId: string) {
         .from('partners')
         .select(`
             *,
-            users!partners_owner_id_fkey (name, email)
+            users (name),
+            partner_categories(category_id),
+            partner_tags_link(tag_id)
         `)
         .eq('id', partnerId)
         .single()
@@ -195,6 +298,12 @@ export async function getPartnerDetails(partnerId: string) {
         .eq('partner_id', partnerId)
         .order('created_at', { ascending: false })
 
+    // 3. Buscar Metadados (Categorias e Tags)
+    const [categoriesRes, tagsRes] = await Promise.all([
+        supabaseAdmin.from('categories').select('id, name').is('parent_id', null).neq('name', 'Categoria Teste').order('name'),
+        supabaseAdmin.from('partner_tags').select('id, name').order('name')
+    ])
+
     // Formatar links
     const formattedLinks = links?.map((l: any) => ({
         academyId: l.academies.id,
@@ -204,13 +313,20 @@ export async function getPartnerDetails(partnerId: string) {
         linkedAt: l.created_at
     })) || []
 
+    const categoryIds = partner.partner_categories?.map((pc: any) => pc.category_id) || []
+    const tagIds = partner.partner_tags_link?.map((pt: any) => pt.tag_id) || []
+
     return {
         partner: {
             ...partner,
             ownerName: partner.users?.name || 'N/A',
-            ownerEmail: partner.users?.email || 'N/A',
+            ownerEmail: 'N/A', // Deprecated/Hidden
+            categoryIds,
+            tagIds
         },
-        links: formattedLinks
+        links: formattedLinks,
+        allCategories: categoriesRes.data || [],
+        allTags: tagsRes.data || []
     }
 }
 

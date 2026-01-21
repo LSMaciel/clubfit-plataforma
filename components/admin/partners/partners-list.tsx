@@ -86,16 +86,31 @@ export async function PartnersListConnections() {
                                     )}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                    {link.status === 'ACTIVE' ? (
-                                        <form action={async () => {
-                                            'use server'
-                                            await unlinkPartner(partner.id)
-                                        }}>
-                                            <button className="text-red-600 hover:text-red-900 font-semibold text-xs uppercase tracking-wide">Desvincular</button>
-                                        </form>
-                                    ) : (
-                                        <span className="text-slate-400 cursor-not-allowed text-xs font-semibold uppercase tracking-wide">Desvinculado</span>
-                                    )}
+                                    <div className="flex justify-end gap-3 items-center">
+                                        {profile?.role === 'SUPER_ADMIN' && (
+                                            <a
+                                                href={`/admin/super/partners/${partner.id}/edit`}
+                                                className="text-slate-400 hover:text-indigo-600 transition-colors ml-2 flex items-center gap-1 font-medium text-sm"
+                                                title="Editar Dados do Parceiro"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                                                </svg>
+                                                Editar
+                                            </a>
+                                        )}
+
+                                        {link.status === 'ACTIVE' ? (
+                                            <form action={async () => {
+                                                'use server'
+                                                await unlinkPartner(partner.id)
+                                            }}>
+                                                <button className="text-red-600 hover:text-red-900 font-semibold text-xs uppercase tracking-wide">Desvincular</button>
+                                            </form>
+                                        ) : (
+                                            <span className="text-slate-400 cursor-not-allowed text-xs font-semibold uppercase tracking-wide">Desvinculado</span>
+                                        )}
+                                    </div>
                                 </td>
                             </tr>
                         )
